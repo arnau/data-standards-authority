@@ -1,0 +1,27 @@
+# The URL the site will be built for
+base_url = "/"
+
+title = "Data Standards Authority Workbench"
+description = "The Workbench is the space the Data Standards Authority uses to draft and curate the information to be published in GOV.UK."
+default_language = "en"
+
+# Whether to automatically compile all Sass files in the sass directory
+compile_sass = true
+
+# Whether to build a search index to be used later on by a JavaScript library
+build_search_index = true
+
+generate_feed = true
+
+[markdown]
+# Whether to do syntax highlighting
+# Theme can be customised by setting the `highlight_theme` variable to a theme supported by Zola
+highlight_code = true
+
+# The theme to use for code highlighting.
+# See below for list of allowed values.
+# highlight_theme = "base16-ocean-dark"
+highlight_theme = "gruvbox-light"
+
+[extra]
+# Put all your custom variables here

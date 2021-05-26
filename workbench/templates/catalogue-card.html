@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>
+  {{ page.title }}
+</h1>
+
+{{ page.content | safe }}
+
+<table class="card">
+  <caption>Summary</caption>
+  <tr scope="row">
+    <th>Identifier</th>
+    <td>{{ page.extra.identifier }}</td>
+  </tr>
+  <tr scope="row">
+    <th>Name</th>
+    <td>{{ page.extra.name }} {% if 'acronym' in page.extra %}({{ page.extra.acronym }}){% endif %}</td>
+  </tr>
+  <tr scope="row">
+    <th>Publisher</th>
+    <td><a href="{{ page.extra.organisation.url }}">{{ page.extra.organisation.name }}</a></td>
+  </tr>
+  <tr scope="row">
+    <th>Specification</th>
+    <td><a href="{{ page.extra.specification }}">{{ page.extra.specification }}</a></td>
+  </tr>
+  <tr scope="row">
+    <th>Phase</th>
+    <td><span class="phase-{{ page.extra.phase }}">{{ page.extra.phase }}</span></td>
+  </tr>
+  <tr scope="row">
+    <th>Start date</th>
+    <td>{{ page.extra.dateCreated }}</td>
+  </tr>
+</table>
+
+{% if 'challenge' in page.extra %}
+{% set challenge = page.extra.challenge %}
+<table class="card">
+  <caption>Open Standards Board Challenge</caption>
+  <tr scope="row">
+    <th>Creation date</th>
+    <td>{{ challenge.dateCreated }}</td>
+  </tr>
+  {% if 'datePublished' in challenge %}
+  <tr scope="row">
+    <th>Endorsment date</th>
+    <td>{{ challenge.datePublished }}</td>
+  </tr>
+  <tr scope="row">
+    <th>Official publication</th>
+    <td><a href="{{ challenge.url }}">{{ challenge.title }}</a></td>
+  </tr>
+  {% endif %}
+</table>
+{% endif %}
+
+{% if 'related' in page.extra %}
+  <h2>Related standards</h2>
+  <ul>
+  {% for item in page.extra.related %}
+  <li><a href="{{ item.url }}">{{ item.title }}</a></li>
+  {% endfor%}
+  </ul>
+{% endif %}
+
+{% endblock content %}
