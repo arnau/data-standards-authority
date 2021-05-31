@@ -1,0 +1,53 @@
+{
+  "@context": "http://www.w3.org/ns/csvw",
+  "url": "standards_development_organisation_membership.csv",
+  "schema:name": "Standards Development Organisations membership",
+  "schema:maintainer": "Data Standards Authority <data-standards-authority@digital.cabinet-office.gov.uk>",
+  "schema:description": "List of Standards Development Organisations of which Cabinet Office is a member",
+  "tableSchema": {
+    "primaryKey": "organisation_url",
+    "columns": [
+      {
+        "titles": "organisation_url",
+        "name": "organisation_url",
+        "schema:description": "The URL of the organisation",
+        "datatype": "schema:URL",
+        "required": true
+      },
+      {
+        "titles": "organisation_name",
+        "name": "organisation_name",
+        "datatype": "string",
+        "required": true
+      },
+      {
+        "titles": "membership_level",
+        "name": "membership_level",
+        "datatype": "string"
+      },
+      {
+        "titles": "benefits",
+        "name": "benefits",
+        "datatype": "string"
+      },
+      {
+        "titles": "cost",
+        "name": "cost",
+        "schema:description": "The cost amount for the membership",
+        "datatype": "number"
+      },
+      {
+        "titles": "currency",
+        "name": "currency",
+        "schema:description": "The ISO 4217 currency code",
+        "datatype": "string"
+      },
+      {
+        "titles": "renewal_date",
+        "name": "renewal_date",
+        "schema:description": "The date the membership is due to renew",
+        "datatype": "date"
+      }
+    ]
+  }
+}
