@@ -1,0 +1,58 @@
+{% macro brief(data) %}
+<section class="brief">
+  <h1>Brief</h1>
+
+  <table class="card">
+    <tr scope="row">
+      <th>Authors</th>
+      <td>
+        <ul>
+          {% for author in data.authors %}
+          <li>{{ author }}</li>
+          {% endfor %}
+        </ul>
+      </td>
+    </tr>
+    {% if 'reviewers' in data %}
+    <tr scope="row">
+      <th>Reviewers</th>
+      <td>
+        <ul>
+          {% for reviewer in data.reviewers %}
+          <li>{{ reviewer }}</li>
+          {% endfor %}
+        </ul>
+      </td>
+    </tr>
+    {% endif %}
+    <tr scope="row">
+      <th>Tags</th>
+      <td>
+        <ul>
+          {% for tag in data.tags %}
+          <li>{{ tag }}</li>
+          {% endfor %}
+        </ul>
+      </td>
+    </tr>
+  </table>
+
+  <h2>What is this guidance (top line)?</h2>
+
+  {{ data.purpose }}
+
+  <h2>Who are the users?</h2>
+
+  {{ data.target }}
+
+  <h2>What are they looking for?</h2>
+
+  {{ data.user_needs }}
+
+  <h2>What are the initial problem statements?</h2>
+
+  {% for statement in data.problem_statements %}
+  {{ statement }}
+  {% endfor %}
+</section>
+{% endmacro brief %}

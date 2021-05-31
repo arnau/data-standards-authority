@@ -1,0 +1,12 @@
+stateDiagram-v2
+    [*] --> Identified
+
+    Identified --> Proposed: propose
+    Proposed --> Endorsed: approve
+    Proposed --> Disavowed: reject
+    Endorsed --> Endorsed: review
+    Endorsed --> Retired: review
+    Endorsed --> Superseded: review
+    Superseded --> [*]
+    Retired --> [*]
+    Disavowed --> Proposed: review
