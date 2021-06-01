@@ -8,7 +8,7 @@ subjects:
 specification: https://spec.graphql.org/June2018/
 licence: owfa-1-0
 maintainer: graphql-foundation
-endorsement_process:
+endorsement_state:
   status: identified
   start_date: 2020-10-01
   review_date: 2020-10-01
