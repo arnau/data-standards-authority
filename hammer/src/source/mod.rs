@@ -41,19 +41,27 @@ fn split_content(blob: &str) -> Result<(&str, &str)> {
 
 /// Cache operations from a source perspective.
 pub trait Source {
+    /// Given a standard id, retrives and shapes a Standard according to the Source spec.
     fn get_standard(&mut self, standard_id: &str) -> Result<Option<Standard>>;
+
+    /// Given a Source Standard, attempts to store it in the cache.
+    ///
+    /// If the standard already exists in the cache it will either update or skip depending on whether it has changed.
     fn add_standard(&mut self, standard: &Standard) -> Result<()>;
+
+    /// Given a standard id it attempts to remove it from the cache (this includes all dependent information such as
+    /// related and endorsement state).
+    fn prune_standard(&mut self, standard_id: &str) -> Result<()>;
 }
 
 impl Source for Cache {
-    /// Given a standard id, retrives and shapes a Standard according to the Source spec.
     fn get_standard(&mut self, standard_id: &str) -> Result<Option<Standard>> {
         let tx = self.conn.transaction()?;
         let mut result = None;
 
-        if let Some(standard_record) = Cache::read_standard(&tx, standard_id)? {
-            let related_records = Cache::read_related_standards(&tx, standard_id)?;
-            let endorsement_record = Cache::read_endorsement_state(&tx, standard_id)?
+        if let Some(standard_record) = Cache::select_standard(&tx, standard_id)? {
+            let related_records = Cache::select_related_standards(&tx, standard_id)?;
+            let endorsement_record = Cache::select_endorsement_state(&tx, standard_id)?
                 .expect("missing endorsement state. the cache is corrupted.");
 
             let related = related_records
@@ -86,18 +94,22 @@ impl Source for Cache {
             result = Some(standard);
         }
 
+        &self.report.log(
+            report::Action::Get,
+            report::Entity::Standard,
+            standard_id,
+            "",
+        );
+
         tx.commit()?;
 
         Ok(result)
     }
 
-    /// Given a Source Standard, attempts to store it in the cache.
-    ///
-    /// If the standard already exists in the cache it will either update or skip depending on whether it has changed.
     fn add_standard(&mut self, standard: &Standard) -> Result<()> {
         let tx = self.conn.transaction()?;
 
-        if let Some(cached_standard) = Cache::read_standard(&tx, standard.id())? {
+        if let Some(cached_standard) = Cache::select_standard(&tx, standard.id())? {
             if cached_standard.checksum != standard.checksum {
                 update_standard(&tx, standard)?;
             }
@@ -105,10 +117,34 @@ impl Source for Cache {
             create_standard(&tx, standard)?;
         }
 
+        Cache::insert_trailmark(
+            &tx,
+            &standard.checksum,
+            "standard",
+            &self.timestamp.to_rfc3339(),
+        )?;
+
         &self.report.log(
             report::Action::Add,
             report::Entity::Standard,
             standard.id(),
+            "",
+        );
+
+        tx.commit()?;
+
+        Ok(())
+    }
+
+    fn prune_standard(&mut self, standard_id: &str) -> Result<()> {
+        let tx = self.conn.transaction()?;
+
+        Cache::delete_standard(&tx, standard_id)?;
+
+        &self.report.log(
+            report::Action::Prune,
+            report::Entity::Standard,
+            standard_id,
             "",
         );
 

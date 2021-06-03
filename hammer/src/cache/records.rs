@@ -1,0 +1,31 @@
+//! This module contains the table records as per the cache physical data model.
+//!
+//! They should strictly match [`../cache.sql`].
+
+#[derive(Debug, Clone)]
+pub struct StandardRecord {
+    pub(crate) id: String,
+    pub(crate) checksum: String,
+    pub(crate) name: String,
+    pub(crate) acronym: Option<String>,
+    pub(crate) topic: String,
+    pub(crate) specification: String,
+    pub(crate) licence: Option<String>,
+    pub(crate) maintainer: String,
+    pub(crate) content: String,
+}
+
+#[derive(Debug, Clone)]
+pub struct RelatedStandardRecord {
+    pub(crate) standard_id: String,
+    pub(crate) related_standard_id: String,
+}
+
+#[derive(Debug, Clone)]
+pub struct EndorsementStateRecord {
+    pub(crate) standard_id: String,
+    pub(crate) status: String,
+    pub(crate) start_date: String,
+    pub(crate) review_date: String,
+    pub(crate) end_date: Option<String>,
+}

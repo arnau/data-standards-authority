@@ -1,34 +1,20 @@
 use anyhow::{self, Result};
+use chrono::{DateTime, Utc};
 pub use rusqlite::Transaction;
 use rusqlite::{self, params, Connection};
-use std::path::{Path, PathBuf};
 use std::str::FromStr;
 
+mod records;
+pub use records::{EndorsementStateRecord, RelatedStandardRecord, StandardRecord};
+mod strategy;
+pub use strategy::Strategy;
+
 use crate::report::{Action, Entity, Report};
-
-#[derive(Debug, Clone, PartialEq)]
-pub enum Strategy {
-    Memory,
-    Disk(PathBuf),
-}
-
-impl FromStr for Strategy {
-    type Err = anyhow::Error;
-
-    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-        match s {
-            ":memory:" => Ok(Strategy::Memory),
-            s => {
-                let path = Path::new(s);
-                Ok(Strategy::Disk(path.into()))
-            }
-        }
-    }
-}
 
 /// A Cache storage.
 #[derive(Debug)]
 pub struct Cache {
+    pub timestamp: DateTime<Utc>,
     pub conn: Connection,
     pub strategy: Strategy,
     pub report: Report,
@@ -38,6 +24,7 @@ impl Cache {
     pub fn connect(path: &str) -> Result<Cache> {
         let strategy = Strategy::from_str(path)?;
         let mut report = Report::new();
+        let timestamp = Utc::now();
         let conn = match &strategy {
             Strategy::Disk(path) => {
                 let conn = Connection::open(path)?;
@@ -53,11 +40,12 @@ impl Cache {
         report.log(
             Action::Chore,
             Entity::Cache,
-            "bootstrap",
+            &strategy.to_string(),
             "Cache bootstrap.",
         );
 
         Ok(Cache {
+            timestamp,
             conn,
             strategy,
             report,
@@ -74,8 +62,128 @@ impl Cache {
         Ok(())
     }
 
+    pub fn report(&self) -> &Report {
+        &self.report
+    }
+
+    /// Remove all stale records for the given session.
+    pub fn prune(&mut self) -> Result<()> {
+        let tx = self.conn.transaction()?;
+
+        Cache::delete_stale_standards(&tx, &self.timestamp.to_rfc3339())?;
+
+        &self.report.log(
+            Action::Prune,
+            Entity::Cache,
+            &self.strategy.to_string(),
+            "Remove all stale records from the cache.",
+        );
+
+        tx.commit()?;
+
+        Ok(())
+    }
+
+    pub(crate) fn insert_trailmark(
+        tx: &Transaction,
+        checksum: &str,
+        resource_type: &str,
+        timestamp: &str,
+    ) -> Result<()> {
+        let values = params![checksum, resource_type, timestamp];
+        let mut stmt = tx.prepare(
+            r#"
+            INSERT OR IGNORE INTO
+                session_trail (
+                    checksum,
+                    resource_type,
+                    timestamp
+                )
+            VALUES
+                (?, ?, ?)
+        "#,
+        )?;
+
+        stmt.execute(values)?;
+
+        Ok(())
+    }
+
+    /// Selects all standard checksum that are not present in the given session trail.
+    #[allow(dead_code)]
+    pub(crate) fn select_stale_standards(tx: &Transaction, timestamp: &str) -> Result<Vec<String>> {
+        let values = params![timestamp];
+        let mut stmt = tx.prepare(
+            r#"
+            SELECT
+                checksum
+            FROM
+                standard
+            WHERE
+                checksum NOT IN (
+                    SELECT
+                        checksum
+                    FROM
+                        session_trail
+                    WHERE
+                        resource_type = "standard"
+                    AND
+                        timestamp = ?
+                )
+        "#,
+        )?;
+
+        let mut rows = stmt.query(values)?;
+        let mut list = Vec::new();
+
+        while let Some(row) = rows.next()? {
+            let s: String = row.get(0)?;
+            list.push(s);
+        }
+
+        Ok(list)
+    }
+
+    /// Deletes all standard records that are not present in the given session trail.
+    ///
+    /// Use [`Cache.prune`] for a full cleanup.
+    pub(crate) fn delete_stale_standards(tx: &Transaction, timestamp: &str) -> Result<()> {
+        let values = params![timestamp];
+        let mut stmt = tx.prepare(
+            r#"
+            DELETE FROM
+                standard
+            WHERE
+                checksum IN (
+                    SELECT
+                        checksum
+                    FROM
+                        standard
+                    WHERE
+                        checksum NOT IN (
+                            SELECT
+                                checksum
+                            FROM
+                                session_trail
+                            WHERE
+                                resource_type = "standard"
+                            AND
+                                timestamp = ?
+                        )
+                )
+        "#,
+        )?;
+
+        stmt.execute(values)?;
+
+        Ok(())
+    }
+
     /// Retrieves the standard by its id.
-    pub fn read_standard(tx: &Transaction, standard_id: &str) -> Result<Option<StandardRecord>> {
+    pub(crate) fn select_standard(
+        tx: &Transaction,
+        standard_id: &str,
+    ) -> Result<Option<StandardRecord>> {
         let mut stmt = tx.prepare(
             r#"
             SELECT
@@ -114,7 +222,7 @@ impl Cache {
         Ok(None)
     }
 
-    pub fn delete_standard(tx: &Transaction, standard_id: &str) -> Result<()> {
+    pub(crate) fn delete_standard(tx: &Transaction, standard_id: &str) -> Result<()> {
         let mut stmt = tx.prepare(
             r#"
             DELETE FROM
@@ -129,7 +237,7 @@ impl Cache {
         Ok(())
     }
 
-    pub fn insert_standard(tx: &Transaction, record: &StandardRecord) -> Result<()> {
+    pub(crate) fn insert_standard(tx: &Transaction, record: &StandardRecord) -> Result<()> {
         let values = params![
             &record.id,
             &record.checksum,
@@ -163,7 +271,7 @@ impl Cache {
         Ok(())
     }
 
-    pub fn read_related_standards(
+    pub(crate) fn select_related_standards(
         tx: &Transaction,
         standard_id: &str,
     ) -> Result<Vec<RelatedStandardRecord>> {
@@ -193,7 +301,10 @@ impl Cache {
         Ok(list)
     }
 
-    pub fn insert_related_standard(tx: &Transaction, record: &RelatedStandardRecord) -> Result<()> {
+    pub(crate) fn insert_related_standard(
+        tx: &Transaction,
+        record: &RelatedStandardRecord,
+    ) -> Result<()> {
         let values = params![&record.standard_id, &record.related_standard_id];
         let mut stmt = tx.prepare(
             r#"
@@ -210,7 +321,7 @@ impl Cache {
         Ok(())
     }
 
-    pub fn read_endorsement_state(
+    pub(crate) fn select_endorsement_state(
         tx: &Transaction,
         standard_id: &str,
     ) -> Result<Option<EndorsementStateRecord>> {
@@ -244,7 +355,7 @@ impl Cache {
         Ok(None)
     }
 
-    pub fn insert_endorsement_state(
+    pub(crate) fn insert_endorsement_state(
         tx: &Transaction,
         record: &EndorsementStateRecord,
     ) -> Result<()> {
@@ -274,37 +385,10 @@ impl Cache {
     }
 }
 
-#[derive(Debug, Clone)]
-pub struct StandardRecord {
-    pub id: String,
-    pub checksum: String,
-    pub name: String,
-    pub acronym: Option<String>,
-    pub topic: String,
-    pub specification: String,
-    pub licence: Option<String>,
-    pub maintainer: String,
-    pub content: String,
-}
-
-#[derive(Debug, Clone)]
-pub struct RelatedStandardRecord {
-    pub standard_id: String,
-    pub related_standard_id: String,
-}
-
-#[derive(Debug, Clone)]
-pub struct EndorsementStateRecord {
-    pub standard_id: String,
-    pub status: String,
-    pub start_date: String,
-    pub review_date: String,
-    pub end_date: Option<String>,
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::path::PathBuf;
     use temp_testdir::TempDir;
 
     #[test]
@@ -322,7 +406,7 @@ mod tests {
         let temp = TempDir::default();
         let mut file_path = PathBuf::from(temp.as_ref());
         file_path.push("cache.db");
-        let cache = Cache::connect(&file_path.into_os_string().into_string().unwrap());
+        let cache = Cache::connect(&file_path.display().to_string());
 
         assert!(
             cache.is_ok(),

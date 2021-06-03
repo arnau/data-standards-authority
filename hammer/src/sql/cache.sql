@@ -1,3 +1,13 @@
+-- Support set to prune the cache from unseen resources.
+CREATE TABLE IF NOT EXISTS session_trail (
+  checksum      text     NOT NULL,
+  resource_type text     NOT NULL,
+  timestamp     datetime NOT NULL,
+
+  UNIQUE (checksum, resource_type, timestamp)
+);
+
+
 CREATE TABLE IF NOT EXISTS topic (
   id          text NOT NULL,
   name        text NOT NULL,

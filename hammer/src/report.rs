@@ -25,7 +25,7 @@ impl Report {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum Action {
     Add,
-    Remove,
+    Prune,
     Get,
     Fail,
     /// Actions to set up and tear down the system.
