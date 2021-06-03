@@ -70,7 +70,7 @@ impl Cache {
     pub fn prune(&mut self) -> Result<()> {
         let tx = self.conn.transaction()?;
 
-        Cache::delete_stale_standards(&tx, &self.timestamp.to_rfc3339())?;
+        Cache::delete_stale_standards(&tx, &timestamp_string(&self.timestamp))?;
 
         &self.report.log(
             Action::Prune,
@@ -80,6 +80,40 @@ impl Cache {
         );
 
         tx.commit()?;
+
+        Ok(())
+    }
+
+    /// Deletes all trails from past sessions but the latesT.
+    pub fn drain_trail(&mut self) -> Result<()> {
+        let tx = self.conn.transaction()?;
+
+        Cache::delete_old_trailmarks(&tx, &timestamp_string(&self.timestamp))?;
+
+        &self.report.log(
+            Action::Prune,
+            Entity::Cache,
+            &self.strategy.to_string(),
+            "Remove all stale records from the session trail.",
+        );
+
+        tx.commit()?;
+
+        Ok(())
+    }
+
+    pub(crate) fn delete_old_trailmarks(tx: &Transaction, timestamp: &str) -> Result<()> {
+        let values = params![timestamp];
+        let mut stmt = tx.prepare(
+            r#"
+            DELETE FROM
+                session_trail
+            WHERE
+                timestamp <> ?
+        "#,
+        )?;
+
+        stmt.execute(values)?;
 
         Ok(())
     }
@@ -383,6 +417,10 @@ impl Cache {
 
         Ok(())
     }
+}
+
+fn timestamp_string(timestamp: &DateTime<Utc>) -> String {
+    timestamp.to_rfc3339()
 }
 
 #[cfg(test)]

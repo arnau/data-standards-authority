@@ -44,12 +44,14 @@ This standard will give you warmth."#,
 
     let mut cache = Cache::connect("./cache.db")?;
 
-    for text in standards.iter().take(1).collect::<Vec<_>>() {
+    // for text in standards.iter().take(1).collect::<Vec<_>>() {
+    for text in standards {
         let standard = Standard::from_str(text)?;
         cache.add_standard(&standard)?;
     }
 
     cache.prune()?;
+    cache.drain_trail()?;
 
     dbg!(cache.report());
 
