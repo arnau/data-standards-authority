@@ -9,9 +9,11 @@ use lazy_static::lazy_static;
 use regex::Regex;
 
 pub mod endorsement;
+pub mod licence;
 pub mod standard;
 
 use endorsement::EndorsementState;
+pub use licence::Licence;
 use standard::Metadata;
 pub use standard::Standard;
 
@@ -86,7 +88,6 @@ impl Source for Cache {
                 endorsement_state,
             };
             let standard = Standard {
-                checksum: standard_record.checksum,
                 metadata,
                 content: standard_record.content,
             };
@@ -108,21 +109,17 @@ impl Source for Cache {
 
     fn add_standard(&mut self, standard: &Standard) -> Result<()> {
         let tx = self.conn.transaction()?;
+        let checksum = standard.checksum().to_string();
 
         if let Some(cached_standard) = Cache::select_standard(&tx, standard.id())? {
-            if cached_standard.checksum != standard.checksum {
+            if cached_standard.checksum != checksum {
                 update_standard(&tx, standard)?;
             }
         } else {
             create_standard(&tx, standard)?;
         }
 
-        Cache::insert_trailmark(
-            &tx,
-            &standard.checksum,
-            "standard",
-            &self.timestamp.to_rfc3339(),
-        )?;
+        Cache::insert_trailmark(&tx, &checksum, "standard", &self.timestamp.to_rfc3339())?;
 
         &self.report.log(
             report::Action::Add,
@@ -158,7 +155,7 @@ impl From<&'_ Standard> for StandardRecord {
     fn from(standard: &Standard) -> Self {
         StandardRecord {
             id: standard.metadata.id.clone(),
-            checksum: standard.checksum.clone(),
+            checksum: standard.checksum().to_string(),
             name: standard.metadata.name.clone(),
             acronym: standard.metadata.acronym.clone(),
             topic: standard.metadata.topic.clone(),
@@ -263,8 +260,8 @@ This standard will give you warmth."#;
         cache.add_standard(&standard)?;
 
         assert_eq!(
-            standard.checksum,
-            "557d6b13b40e5e37363e36d296dd05d023e33799f6f3027d8cb9792f4c19ba59"
+            &standard.checksum().to_string(),
+            "feb2a425f367add826789547e59390d05a9c8aade19a3d619760d57294629faf"
         );
 
         Ok(())
@@ -280,8 +277,8 @@ This standard will give you warmth."#;
         cache.add_standard(&steam)?;
 
         assert_eq!(
-            vapour.checksum,
-            "557d6b13b40e5e37363e36d296dd05d023e33799f6f3027d8cb9792f4c19ba59"
+            &vapour.checksum().to_string(),
+            "feb2a425f367add826789547e59390d05a9c8aade19a3d619760d57294629faf"
         );
 
         Ok(())
@@ -296,8 +293,8 @@ This standard will give you warmth."#;
         cache.add_standard(&vapour)?;
 
         assert_eq!(
-            vapour.checksum,
-            "557d6b13b40e5e37363e36d296dd05d023e33799f6f3027d8cb9792f4c19ba59"
+            &vapour.checksum().to_string(),
+            "feb2a425f367add826789547e59390d05a9c8aade19a3d619760d57294629faf"
         );
 
         Ok(())
@@ -334,7 +331,7 @@ This standard will give you no overhead."#;
         let cached_vapour = cache.get_standard("vapour")?.unwrap();
 
         assert_eq!(cached_vapour.metadata.related.len(), 0);
-        assert_eq!(cached_vapour.checksum, vapour_modified.checksum);
+        assert_eq!(cached_vapour.checksum(), vapour_modified.checksum());
 
         Ok(())
     }

@@ -51,7 +51,7 @@ This standard will give you warmth."#,
     }
 
     cache.prune()?;
-    cache.drain_trail()?;
+    // cache.drain_trail()?;
 
     dbg!(cache.report());
 

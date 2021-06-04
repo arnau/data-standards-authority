@@ -4,6 +4,7 @@ use std::fmt;
 use std::str::FromStr;
 
 use super::Date;
+use crate::checksum::{Digest, Hasher, Tag};
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(rename_all = "kebab-case")]
@@ -49,6 +50,12 @@ impl FromStr for EndorsementStatus {
     }
 }
 
+impl Digest for EndorsementStatus {
+    fn digest(&self, hasher: &mut Hasher) {
+        self.to_string().digest(hasher);
+    }
+}
+
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct EndorsementState {
     pub status: EndorsementStatus,
@@ -56,4 +63,14 @@ pub struct EndorsementState {
     pub review_date: Date,
     #[serde(default)]
     pub end_date: Option<Date>,
+}
+
+impl Digest for EndorsementState {
+    fn digest(&self, hasher: &mut Hasher) {
+        hasher.update(&Tag::Dict.to_bytes());
+        self.status.digest(hasher);
+        self.start_date.to_string().digest(hasher);
+        self.review_date.to_string().digest(hasher);
+        self.end_date.digest(hasher);
+    }
 }

@@ -1,17 +1,15 @@
 //! This module covers the standard card and collection from an input point of view.
-use blake3;
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
 
 use super::endorsement::EndorsementState;
 use super::{split_content, LicenceId, OrganisationId, TopicId, Url};
+use crate::checksum::{Checksum, Digest, Hasher};
 
 pub type StandardId = String;
-pub type Checksum = String;
 
 #[derive(Debug, Clone)]
 pub struct Standard {
-    pub checksum: Checksum,
     pub metadata: Metadata,
     pub content: String,
 }
@@ -19,6 +17,26 @@ pub struct Standard {
 impl Standard {
     pub fn id(&self) -> &StandardId {
         &self.metadata.id
+    }
+
+    pub fn checksum(&self) -> Checksum {
+        self.into()
+    }
+}
+
+impl Digest for Standard {
+    fn digest(&self, hasher: &mut Hasher) {
+        self.metadata.digest(hasher);
+        self.content.digest(hasher);
+    }
+}
+
+impl From<&Standard> for Checksum {
+    fn from(standard: &Standard) -> Checksum {
+        let mut hasher = Hasher::new();
+        standard.digest(&mut hasher);
+
+        hasher.finalize()
     }
 }
 
@@ -28,10 +46,8 @@ impl FromStr for Standard {
     fn from_str(blob: &str) -> Result<Self, Self::Err> {
         let (frontmatter, content) = split_content(blob)?;
         let metadata = serde_yaml::from_str(frontmatter)?;
-        let checksum = blake3::hash(blob.as_bytes()).to_hex().to_string();
 
         Ok(Self {
-            checksum,
             metadata,
             content: content.into(),
         })
@@ -63,6 +79,21 @@ pub struct Metadata {
     #[serde(default)]
     pub related: Vec<StandardId>,
     pub endorsement_state: EndorsementState,
+}
+
+impl Digest for Metadata {
+    fn digest(&self, hasher: &mut Hasher) {
+        self.id.digest(hasher);
+        self.name.digest(hasher);
+        self.acronym.digest(hasher);
+        self.topic.digest(hasher);
+        // self.subjects.digest(hasher);
+        self.specification.digest(hasher);
+        self.licence.digest(hasher);
+        self.maintainer.digest(hasher);
+        self.related.digest(hasher);
+        self.endorsement_state.digest(hasher);
+    }
 }
 
 #[cfg(test)]
@@ -97,8 +128,8 @@ This standard will give you no overhead."#;
 
         assert_eq!(standard.id(), "vapour");
         assert_eq!(
-            standard.checksum,
-            "557d6b13b40e5e37363e36d296dd05d023e33799f6f3027d8cb9792f4c19ba59"
+            &standard.checksum().to_string(),
+            "feb2a425f367add826789547e59390d05a9c8aade19a3d619760d57294629faf"
         );
         assert_eq!(
             &standard.content,

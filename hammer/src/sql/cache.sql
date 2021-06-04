@@ -9,9 +9,17 @@ CREATE TABLE IF NOT EXISTS session_trail (
 
 
 CREATE TABLE IF NOT EXISTS topic (
-  id          text NOT NULL,
+  id          text NOT NULL PRIMARY KEY,
   name        text NOT NULL,
   description text
+);
+
+CREATE TABLE IF NOT EXISTS licence (
+  id       text NOT NULL PRIMARY KEY,
+  checksum text NOT NULL,
+  name     text NOT NULL,
+  acronym  text,
+  url      text NOT NULL
 );
 
 
@@ -43,4 +51,6 @@ CREATE TABLE IF NOT EXISTS standard (
   licence       text,
   maintainer    text NOT NULL,
   content       text NOT NULL
+
+  /* FOREIGN KEY (licence) REFERENCES licence (id) */
 );
