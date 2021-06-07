@@ -2,7 +2,9 @@
 
 use anyhow::Result;
 
-pub trait Resource<Lens: ?Sized, Item> {
+use crate::checksum::Digest;
+
+pub trait Resource<Item: Digest> {
     /// Composes a single resource given its id.
     fn get(&mut self, id: &str) -> Result<Option<Item>>;
 
@@ -10,7 +12,7 @@ pub trait Resource<Lens: ?Sized, Item> {
     fn add(&mut self, item: &Item) -> Result<()>;
 
     /// Cleans a single resource and potentially any dependency given its id.
-    fn prune(&mut self, id: &str) -> Result<()>;
+    fn drop(&mut self, id: &str) -> Result<Option<Item>>;
 
     // /// Inserts the given collection of resources to the store.
     // fn bulk(&mut self, collection: &[Item]) -> Result<()>;

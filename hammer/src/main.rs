@@ -1,5 +1,7 @@
 use anyhow::Result;
-use hammer::{source::Source, source::Standard, Cache};
+use hammer::resource::Resource;
+use hammer::source::{Licence, Standard};
+use hammer::Cache;
 use std::str::FromStr;
 
 fn main() -> Result<()> {
@@ -42,13 +44,23 @@ related:
 This standard will give you warmth."#,
     ];
 
+    let licence_raw = r#"{
+      "id": "ogl-3",
+      "name": "Open Government License",
+      "acronym": "OGL",
+      "url": "https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/"
+    }"#;
+
     let mut cache = Cache::connect("./cache.db")?;
 
     // for text in standards.iter().take(1).collect::<Vec<_>>() {
     for text in standards {
         let standard = Standard::from_str(text)?;
-        cache.add_standard(&standard)?;
+        cache.add(&standard)?;
     }
+
+    let licence = Licence::from_str(licence_raw)?;
+    cache.add(&licence)?;
 
     cache.prune()?;
     // cache.drain_trail()?;

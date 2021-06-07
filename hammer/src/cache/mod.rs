@@ -430,7 +430,7 @@ impl Cache {
                 checksum,
                 name,
                 acronym,
-                url,
+                url
             FROM
                 licence
             WHERE
@@ -478,12 +478,12 @@ impl Cache {
         ];
         let mut stmt = tx.prepare(
             r#"
-            INSERT INTO standard (
+            INSERT INTO licence (
                 id,
                 checksum,
                 name,
                 acronym,
-                url,
+                url
             )
             VALUES (?, ?, ?, ?, ?);
         "#,

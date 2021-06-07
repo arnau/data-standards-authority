@@ -1,10 +1,15 @@
 //! This module covers the standard card and collection from an input point of view.
+use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
 
 use super::endorsement::EndorsementState;
 use super::{split_content, LicenceId, OrganisationId, TopicId, Url};
+use crate::cache::records::*;
+use crate::cache::{Cache, Transaction};
 use crate::checksum::{Checksum, Digest, Hasher};
+use crate::report;
+use crate::resource::Resource;
 
 pub type StandardId = String;
 
@@ -96,15 +101,166 @@ impl Digest for Metadata {
     }
 }
 
+impl Resource<Standard> for Cache {
+    fn get(&mut self, standard_id: &str) -> Result<Option<Standard>> {
+        let tx = self.conn.transaction()?;
+        let mut result = None;
+
+        if let Some(standard_record) = Cache::select_standard(&tx, standard_id)? {
+            let related_records = Cache::select_related_standards(&tx, standard_id)?;
+            let endorsement_record = Cache::select_endorsement_state(&tx, standard_id)?
+                .expect("missing endorsement state. the cache is corrupted.");
+
+            let related = related_records
+                .iter()
+                .map(|record| record.related_standard_id.clone())
+                .collect::<Vec<_>>();
+            let endorsement_state = EndorsementState {
+                status: endorsement_record.status.parse()?,
+                start_date: endorsement_record.start_date,
+                review_date: endorsement_record.review_date,
+                end_date: endorsement_record.end_date,
+            };
+            let metadata = Metadata {
+                id: standard_record.id,
+                name: standard_record.name,
+                acronym: standard_record.acronym,
+                topic: standard_record.topic,
+                specification: standard_record.specification,
+                licence: standard_record.licence,
+                maintainer: standard_record.maintainer,
+                related,
+                endorsement_state,
+            };
+            let standard = Standard {
+                metadata,
+                content: standard_record.content,
+            };
+
+            result = Some(standard);
+        }
+
+        &self.report.log(
+            report::Action::Get,
+            report::Entity::Standard,
+            standard_id,
+            "",
+        );
+
+        tx.commit()?;
+
+        Ok(result)
+    }
+
+    fn add(&mut self, standard: &Standard) -> Result<()> {
+        let tx = self.conn.transaction()?;
+        let checksum = standard.checksum().to_string();
+
+        if let Some(cached_standard) = Cache::select_standard(&tx, standard.id())? {
+            if cached_standard.checksum != checksum {
+                update_standard(&tx, standard)?;
+            }
+        } else {
+            create_standard(&tx, standard)?;
+        }
+
+        Cache::insert_trailmark(&tx, &checksum, "standard", &self.timestamp)?;
+
+        &self.report.log(
+            report::Action::Add,
+            report::Entity::Standard,
+            standard.id(),
+            "",
+        );
+
+        tx.commit()?;
+
+        Ok(())
+    }
+
+    fn drop(&mut self, standard_id: &str) -> Result<Option<Standard>> {
+        let standard = self.get(&standard_id)?;
+        let tx = self.conn.transaction()?;
+
+        if standard.is_some() {
+            Cache::delete_standard(&tx, standard_id)?;
+        }
+
+        &self.report.log(
+            report::Action::Prune,
+            report::Entity::Standard,
+            standard_id,
+            "",
+        );
+
+        tx.commit()?;
+
+        Ok(standard)
+    }
+}
+
+impl From<&Standard> for StandardRecord {
+    fn from(standard: &Standard) -> Self {
+        StandardRecord {
+            id: standard.metadata.id.clone(),
+            checksum: standard.checksum().to_string(),
+            name: standard.metadata.name.clone(),
+            acronym: standard.metadata.acronym.clone(),
+            topic: standard.metadata.topic.clone(),
+            specification: standard.metadata.specification.clone(),
+            licence: standard.metadata.licence.clone(),
+            maintainer: standard.metadata.maintainer.clone(),
+            content: standard.content.clone(),
+        }
+    }
+}
+
+impl From<&Standard> for EndorsementStateRecord {
+    fn from(standard: &Standard) -> Self {
+        EndorsementStateRecord {
+            standard_id: standard.metadata.id.clone(),
+            status: standard.metadata.endorsement_state.status.to_string(),
+            start_date: standard.metadata.endorsement_state.start_date.to_string(),
+            review_date: standard.metadata.endorsement_state.review_date.to_string(),
+            end_date: standard.metadata.endorsement_state.end_date.clone(),
+        }
+    }
+}
+
+/// Helper to perform a strict create. Will fail if the standard exists.
+fn create_standard(tx: &Transaction, standard: &Standard) -> Result<()> {
+    Cache::insert_standard(&tx, &standard.into())?;
+
+    for related in &standard.metadata.related {
+        Cache::insert_related_standard(
+            &tx,
+            &RelatedStandardRecord {
+                standard_id: standard.id().clone(),
+                related_standard_id: related.clone(),
+            },
+        )?;
+    }
+
+    Cache::insert_endorsement_state(&tx, &standard.into())?;
+
+    Ok(())
+}
+
+/// Helper to perform replace an existing standard. This relies on the `ON DELETE CASCADE`.
+fn update_standard(tx: &Transaction, standard: &Standard) -> Result<()> {
+    Cache::delete_standard(&tx, &standard.id())?;
+    create_standard(&tx, standard)?;
+
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use anyhow::Result;
     use std::str::FromStr;
 
-    #[test]
-    fn baseline_blob() -> Result<()> {
-        let blob = r#"---
+    static VAPOUR_STANDARD: &'static str = r#"---
 type: standard
 identifier: vapour
 name: Vapour
@@ -124,7 +280,30 @@ related:
 # Vapour
 
 This standard will give you no overhead."#;
-        let standard = Standard::from_str(blob)?;
+    static STEAM_STANDARD: &'static str = r#"---
+type: standard
+identifier: steam
+name: Steam
+topic: exchange
+subjects:
+    - api_access
+specification: https://spec.steam.org/
+licence: ogl
+maintainer: data-standards-authority
+endorsement_state:
+    status: identified
+    start_date: 2021-06-01
+    review_date: 2021-06-01
+related:
+    - vapour
+---
+# Steam
+
+This standard will give you warmth."#;
+
+    #[test]
+    fn baseline_blob() -> Result<()> {
+        let standard = Standard::from_str(VAPOUR_STANDARD)?;
 
         assert_eq!(standard.id(), "vapour");
         assert_eq!(
@@ -135,6 +314,108 @@ This standard will give you no overhead."#;
             &standard.content,
             "# Vapour\n\nThis standard will give you no overhead."
         );
+
+        Ok(())
+    }
+
+    #[test]
+    fn single_standard() -> Result<()> {
+        let standard = Standard::from_str(VAPOUR_STANDARD)?;
+        let mut cache = Cache::connect(":memory:")?;
+
+        cache.add(&standard)?;
+
+        assert_eq!(
+            &standard.checksum().to_string(),
+            "feb2a425f367add826789547e59390d05a9c8aade19a3d619760d57294629faf"
+        );
+
+        Ok(())
+    }
+
+    #[test]
+    fn two_standard() -> Result<()> {
+        let vapour = Standard::from_str(VAPOUR_STANDARD)?;
+        let steam = Standard::from_str(STEAM_STANDARD)?;
+        let mut cache = Cache::connect(":memory:")?;
+
+        cache.add(&vapour)?;
+        cache.add(&steam)?;
+
+        assert_eq!(
+            &vapour.checksum().to_string(),
+            "feb2a425f367add826789547e59390d05a9c8aade19a3d619760d57294629faf"
+        );
+
+        Ok(())
+    }
+
+    #[test]
+    fn same_standard_twice() -> Result<()> {
+        let vapour = Standard::from_str(VAPOUR_STANDARD)?;
+        let mut cache = Cache::connect(":memory:")?;
+
+        cache.add(&vapour)?;
+        cache.add(&vapour)?;
+
+        assert_eq!(
+            &vapour.checksum().to_string(),
+            "feb2a425f367add826789547e59390d05a9c8aade19a3d619760d57294629faf"
+        );
+
+        Ok(())
+    }
+
+    #[test]
+    fn update_standard() -> Result<()> {
+        let mut cache = Cache::connect(":memory:")?;
+        let vapour = Standard::from_str(VAPOUR_STANDARD)?;
+        let vapour2 = r#"---
+type: standard
+identifier: vapour
+name: Vapour
+topic: exchange
+subjects:
+    - api_access
+specification: https://spec.vapour.org/
+licence: ogl
+maintainer: data-standards-authority
+endorsement_state:
+    status: identified
+    start_date: 2021-06-01
+    review_date: 2021-06-01
+---
+# Vapour
+
+This standard will give you no overhead."#;
+
+        let vapour_modified = Standard::from_str(vapour2)?;
+
+        cache.add(&vapour)?;
+        cache.add(&vapour_modified)?;
+
+        let cached_vapour: Standard = cache.get("vapour")?.unwrap();
+
+        assert_eq!(cached_vapour.metadata.related.len(), 0);
+        assert_eq!(cached_vapour.checksum(), vapour_modified.checksum());
+
+        Ok(())
+    }
+
+    #[test]
+    fn gad_standard() -> Result<()> {
+        let original = Standard::from_str(VAPOUR_STANDARD)?;
+        let mut cache = Cache::connect(":memory:")?;
+
+        cache.add(&original)?;
+        let cached: Standard = cache.get(&original.id())?.expect("standard doesn't exist");
+
+        assert_eq!(&original.checksum(), &cached.checksum());
+
+        let _: Option<Standard> = cache.drop(&original.id())?;
+        let void: Option<Standard> = cache.get(&original.id())?;
+
+        assert!(void.is_none());
 
         Ok(())
     }
