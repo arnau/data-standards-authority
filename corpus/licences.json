@@ -1,0 +1,19 @@
+[
+  {
+    "id": "ogl-3",
+    "name": "Open Government License",
+    "acronym": "OGL",
+    "url": "https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/"
+  },
+  {
+    "id": "mit",
+    "name": "MIT License",
+    "acronym": "MIT",
+    "url": "https://choosealicense.com/licenses/mit/"
+  },
+  {
+    "id": "owfa-1-0",
+    "name": "Open Web Foundation Agreement 1.0",
+    "url": "http://www.openwebfoundation.org/legal/the-owf-1-0-agreements/owfa-1-0"
+  }
+]

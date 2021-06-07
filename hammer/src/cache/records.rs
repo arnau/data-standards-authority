@@ -29,3 +29,12 @@ pub struct EndorsementStateRecord {
     pub(crate) review_date: String,
     pub(crate) end_date: Option<String>,
 }
+
+#[derive(Debug, Clone)]
+pub struct LicenceRecord {
+    pub id: String,
+    pub checksum: String,
+    pub name: String,
+    pub acronym: Option<String>,
+    pub url: String,
+}

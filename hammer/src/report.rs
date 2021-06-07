@@ -36,6 +36,7 @@ pub enum Action {
 pub enum Entity {
     Cache,
     Standard,
+    Licence,
     // Guidance,
     // Usecase,
     // Casestudy,

@@ -4,8 +4,8 @@ pub use rusqlite::Transaction;
 use rusqlite::{self, params, Connection};
 use std::str::FromStr;
 
-mod records;
-pub use records::{EndorsementStateRecord, RelatedStandardRecord, StandardRecord};
+pub(crate) mod records;
+pub use records::*;
 mod strategy;
 pub use strategy::Strategy;
 
@@ -122,9 +122,9 @@ impl Cache {
         tx: &Transaction,
         checksum: &str,
         resource_type: &str,
-        timestamp: &str,
+        timestamp: &DateTime<Utc>,
     ) -> Result<()> {
-        let values = params![checksum, resource_type, timestamp];
+        let values = params![checksum, resource_type, &timestamp_string(timestamp)];
         let mut stmt = tx.prepare(
             r#"
             INSERT OR IGNORE INTO
@@ -417,9 +417,85 @@ impl Cache {
 
         Ok(())
     }
+
+    /// Retrieves the licence by its id.
+    pub(crate) fn select_licence(
+        tx: &Transaction,
+        licence_id: &str,
+    ) -> Result<Option<LicenceRecord>> {
+        let mut stmt = tx.prepare(
+            r#"
+            SELECT
+                id,
+                checksum,
+                name,
+                acronym,
+                url,
+            FROM
+                licence
+            WHERE
+                id = ?;
+        "#,
+        )?;
+        let mut rows = stmt.query(params![licence_id])?;
+
+        if let Some(row) = rows.next()? {
+            let result = LicenceRecord {
+                id: row.get(0)?,
+                checksum: row.get(1)?,
+                name: row.get(2)?,
+                acronym: row.get(3)?,
+                url: row.get(4)?,
+            };
+            return Ok(Some(result));
+        }
+
+        Ok(None)
+    }
+
+    pub(crate) fn delete_licence(tx: &Transaction, licence_id: &str) -> Result<()> {
+        let mut stmt = tx.prepare(
+            r#"
+            DELETE FROM
+                licence
+            WHERE
+                id = ?;
+        "#,
+        )?;
+
+        stmt.execute(params![licence_id])?;
+
+        Ok(())
+    }
+
+    pub(crate) fn insert_licence(tx: &Transaction, record: &LicenceRecord) -> Result<()> {
+        let values = params![
+            &record.id,
+            &record.checksum,
+            &record.name,
+            &record.acronym,
+            &record.url,
+        ];
+        let mut stmt = tx.prepare(
+            r#"
+            INSERT INTO standard (
+                id,
+                checksum,
+                name,
+                acronym,
+                url,
+            )
+            VALUES (?, ?, ?, ?, ?);
+        "#,
+        )?;
+
+        stmt.execute(values)?;
+
+        Ok(())
+    }
 }
 
-fn timestamp_string(timestamp: &DateTime<Utc>) -> String {
+pub fn timestamp_string(timestamp: &DateTime<Utc>) -> String {
     timestamp.to_rfc3339()
 }
 

@@ -7,6 +7,7 @@ use crate::checksum::{Checksum, Digest, Hasher};
 pub struct Licence {
     pub id: String,
     pub name: String,
+    #[serde(default)]
     pub acronym: Option<String>,
     pub url: String,
 }

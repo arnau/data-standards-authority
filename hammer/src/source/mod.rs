@@ -1,7 +1,8 @@
 //! This module deals with data shaped as source, a mix of Markdown, Toml, CSV and YAML.
 //!
 //! Source Markdown files are prepended with a YAML frontmatter.
-use crate::cache::{EndorsementStateRecord, RelatedStandardRecord, StandardRecord, Transaction};
+use crate::cache::records::*;
+use crate::cache::Transaction;
 use crate::report;
 use crate::Cache;
 use anyhow::Result;
@@ -54,6 +55,12 @@ pub trait Source {
     /// Given a standard id it attempts to remove it from the cache (this includes all dependent information such as
     /// related and endorsement state).
     fn prune_standard(&mut self, standard_id: &str) -> Result<()>;
+
+    fn get_licence(&mut self, licence_id: &str) -> Result<Option<Licence>>;
+
+    fn add_licence(&mut self, licence: &Licence) -> Result<()>;
+
+    fn prune_licence(&mut self, licence_id: &str) -> Result<()>;
 }
 
 impl Source for Cache {
@@ -119,7 +126,7 @@ impl Source for Cache {
             create_standard(&tx, standard)?;
         }
 
-        Cache::insert_trailmark(&tx, &checksum, "standard", &self.timestamp.to_rfc3339())?;
+        Cache::insert_trailmark(&tx, &checksum, "standard", &self.timestamp)?;
 
         &self.report.log(
             report::Action::Add,
@@ -149,9 +156,238 @@ impl Source for Cache {
 
         Ok(())
     }
+
+    fn get_licence(&mut self, licence_id: &str) -> Result<Option<Licence>> {
+        let tx = self.conn.transaction()?;
+        let mut result = None;
+
+        if let Some(licence_record) = Cache::select_licence(&tx, licence_id)? {
+            result = Some(Licence {
+                id: licence_record.id.clone(),
+                name: licence_record.name.clone(),
+                acronym: licence_record.acronym.clone(),
+                url: licence_record.url.clone(),
+            });
+        }
+
+        &self
+            .report
+            .log(report::Action::Get, report::Entity::Licence, licence_id, "");
+
+        tx.commit()?;
+
+        Ok(result)
+    }
+
+    fn add_licence(&mut self, licence: &Licence) -> Result<()> {
+        let tx = self.conn.transaction()?;
+        let checksum = licence.checksum().to_string();
+
+        if let Some(cached) = Cache::select_licence(&tx, &licence.id)? {
+            if cached.checksum != checksum {
+                Cache::delete_licence(&tx, &licence.id)?;
+            }
+        }
+
+        Cache::insert_licence(&tx, &licence.into())?;
+
+        Cache::insert_trailmark(&tx, &checksum, "licence", &self.timestamp)?;
+
+        &self.report.log(
+            report::Action::Add,
+            report::Entity::Licence,
+            &licence.id,
+            "",
+        );
+
+        tx.commit()?;
+
+        Ok(())
+    }
+
+    fn prune_licence(&mut self, licence_id: &str) -> Result<()> {
+        let tx = self.conn.transaction()?;
+
+        Cache::delete_licence(&tx, licence_id)?;
+
+        &self.report.log(
+            report::Action::Prune,
+            report::Entity::Licence,
+            licence_id,
+            "",
+        );
+
+        tx.commit()?;
+
+        Ok(())
+    }
 }
 
-impl From<&'_ Standard> for StandardRecord {
+use crate::resource::Resource;
+
+impl Resource<dyn Source, Standard> for Cache {
+    fn get(&mut self, standard_id: &str) -> Result<Option<Standard>> {
+        let tx = self.conn.transaction()?;
+        let mut result = None;
+
+        if let Some(standard_record) = Cache::select_standard(&tx, standard_id)? {
+            let related_records = Cache::select_related_standards(&tx, standard_id)?;
+            let endorsement_record = Cache::select_endorsement_state(&tx, standard_id)?
+                .expect("missing endorsement state. the cache is corrupted.");
+
+            let related = related_records
+                .iter()
+                .map(|record| record.related_standard_id.clone())
+                .collect::<Vec<_>>();
+            let endorsement_state = EndorsementState {
+                status: endorsement_record.status.parse()?,
+                start_date: endorsement_record.start_date,
+                review_date: endorsement_record.review_date,
+                end_date: endorsement_record.end_date,
+            };
+            let metadata = Metadata {
+                id: standard_record.id,
+                name: standard_record.name,
+                acronym: standard_record.acronym,
+                topic: standard_record.topic,
+                specification: standard_record.specification,
+                licence: standard_record.licence,
+                maintainer: standard_record.maintainer,
+                related,
+                endorsement_state,
+            };
+            let standard = Standard {
+                metadata,
+                content: standard_record.content,
+            };
+
+            result = Some(standard);
+        }
+
+        &self.report.log(
+            report::Action::Get,
+            report::Entity::Standard,
+            standard_id,
+            "",
+        );
+
+        tx.commit()?;
+
+        Ok(result)
+    }
+
+    fn add(&mut self, standard: &Standard) -> Result<()> {
+        let tx = self.conn.transaction()?;
+        let checksum = standard.checksum().to_string();
+
+        if let Some(cached_standard) = Cache::select_standard(&tx, standard.id())? {
+            if cached_standard.checksum != checksum {
+                update_standard(&tx, standard)?;
+            }
+        } else {
+            create_standard(&tx, standard)?;
+        }
+
+        Cache::insert_trailmark(&tx, &checksum, "standard", &self.timestamp)?;
+
+        &self.report.log(
+            report::Action::Add,
+            report::Entity::Standard,
+            standard.id(),
+            "",
+        );
+
+        tx.commit()?;
+
+        Ok(())
+    }
+
+    fn prune(&mut self, standard_id: &str) -> Result<()> {
+        let tx = self.conn.transaction()?;
+
+        Cache::delete_standard(&tx, standard_id)?;
+
+        &self.report.log(
+            report::Action::Prune,
+            report::Entity::Standard,
+            standard_id,
+            "",
+        );
+
+        tx.commit()?;
+
+        Ok(())
+    }
+}
+
+impl Resource<Source, Licence> for Cache {
+    fn get(&mut self, licence_id: &str) -> Result<Option<Licence>> {
+        let tx = self.conn.transaction()?;
+        let mut result = None;
+
+        if let Some(licence_record) = Cache::select_licence(&tx, licence_id)? {
+            result = Some(Licence {
+                id: licence_record.id.clone(),
+                name: licence_record.name.clone(),
+                acronym: licence_record.acronym.clone(),
+                url: licence_record.url.clone(),
+            });
+        }
+
+        &self
+            .report
+            .log(report::Action::Get, report::Entity::Licence, licence_id, "");
+
+        tx.commit()?;
+
+        Ok(result)
+    }
+
+    fn add(&mut self, licence: &Licence) -> Result<()> {
+        let tx = self.conn.transaction()?;
+        let checksum = licence.checksum().to_string();
+
+        if let Some(cached) = Cache::select_licence(&tx, &licence.id)? {
+            if cached.checksum != checksum {
+                Cache::delete_licence(&tx, &licence.id)?;
+            }
+        }
+
+        Cache::insert_licence(&tx, &licence.into())?;
+
+        Cache::insert_trailmark(&tx, &checksum, "licence", &self.timestamp)?;
+
+        &self.report.log(
+            report::Action::Add,
+            report::Entity::Licence,
+            &licence.id,
+            "",
+        );
+
+        tx.commit()?;
+
+        Ok(())
+    }
+
+    fn prune(&mut self, licence_id: &str) -> Result<()> {
+        let tx = self.conn.transaction()?;
+
+        Cache::delete_licence(&tx, licence_id)?;
+
+        &self.report.log(
+            report::Action::Prune,
+            report::Entity::Licence,
+            licence_id,
+            "",
+        );
+
+        tx.commit()?;
+
+        Ok(())
+    }
+}
+
+impl From<&Standard> for StandardRecord {
     fn from(standard: &Standard) -> Self {
         StandardRecord {
             id: standard.metadata.id.clone(),
@@ -167,7 +403,7 @@ impl From<&'_ Standard> for StandardRecord {
     }
 }
 
-impl From<&'_ Standard> for EndorsementStateRecord {
+impl From<&Standard> for EndorsementStateRecord {
     fn from(standard: &Standard) -> Self {
         EndorsementStateRecord {
             standard_id: standard.metadata.id.clone(),
@@ -175,6 +411,18 @@ impl From<&'_ Standard> for EndorsementStateRecord {
             start_date: standard.metadata.endorsement_state.start_date.to_string(),
             review_date: standard.metadata.endorsement_state.review_date.to_string(),
             end_date: standard.metadata.endorsement_state.end_date.clone(),
+        }
+    }
+}
+
+impl From<&Licence> for LicenceRecord {
+    fn from(licence: &Licence) -> Self {
+        LicenceRecord {
+            id: licence.id.clone(),
+            checksum: licence.checksum().to_string(),
+            name: licence.name.clone(),
+            acronym: licence.acronym.clone(),
+            url: licence.url.clone(),
         }
     }
 }
@@ -210,6 +458,7 @@ fn update_standard(tx: &Transaction, standard: &Standard) -> Result<()> {
 mod tests {
     use super::*;
     use anyhow::Result;
+    use serde_json;
     use std::str::FromStr;
 
     static VAPOUR_STANDARD: &'static str = r#"---
@@ -257,7 +506,7 @@ This standard will give you warmth."#;
         let standard = Standard::from_str(VAPOUR_STANDARD)?;
         let mut cache = Cache::connect(":memory:")?;
 
-        cache.add_standard(&standard)?;
+        cache.add(&standard)?;
 
         assert_eq!(
             &standard.checksum().to_string(),
@@ -273,8 +522,8 @@ This standard will give you warmth."#;
         let steam = Standard::from_str(STEAM_STANDARD)?;
         let mut cache = Cache::connect(":memory:")?;
 
-        cache.add_standard(&vapour)?;
-        cache.add_standard(&steam)?;
+        cache.add(&vapour)?;
+        cache.add(&steam)?;
 
         assert_eq!(
             &vapour.checksum().to_string(),
@@ -289,8 +538,8 @@ This standard will give you warmth."#;
         let vapour = Standard::from_str(VAPOUR_STANDARD)?;
         let mut cache = Cache::connect(":memory:")?;
 
-        cache.add_standard(&vapour)?;
-        cache.add_standard(&vapour)?;
+        cache.add(&vapour)?;
+        cache.add(&vapour)?;
 
         assert_eq!(
             &vapour.checksum().to_string(),
@@ -325,13 +574,42 @@ This standard will give you no overhead."#;
 
         let vapour_modified = Standard::from_str(vapour2)?;
 
-        cache.add_standard(&vapour)?;
-        cache.add_standard(&vapour_modified)?;
+        cache.add(&vapour)?;
+        cache.add(&vapour_modified)?;
 
         let cached_vapour = cache.get_standard("vapour")?.unwrap();
 
         assert_eq!(cached_vapour.metadata.related.len(), 0);
         assert_eq!(cached_vapour.checksum(), vapour_modified.checksum());
+
+        Ok(())
+    }
+
+    #[test]
+    fn add_licences() -> Result<()> {
+        let mut cache = Cache::connect(":memory:")?;
+        let raw = r#"[
+          {
+            "id": "ogl-3",
+            "name": "Open Government License",
+            "acronym": "OGL",
+            "url": "https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/"
+          },
+          {
+            "id": "mit",
+            "name": "MIT License",
+            "acronym": "MIT",
+            "url": "https://choosealicense.com/licenses/mit/"
+          },
+          {
+            "id": "owfa-1-0",
+            "name": "Open Web Foundation Agreement 1.0",
+            "url": "http://www.openwebfoundation.org/legal/the-owf-1-0-agreements/owfa-1-0"
+          }
+        ]"#;
+        let licences: Vec<Licence> = serde_json::from_str(raw)?;
+
+        assert_eq!(licences.len(), 3);
 
         Ok(())
     }
