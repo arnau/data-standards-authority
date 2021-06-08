@@ -1,0 +1,22 @@
+[
+  {
+    "id": "data-standards-authority",
+    "name": "Data Standards Authority",
+    "url": "https://www.gov.uk/government/groups/data-standards-authority/"
+  },
+  {
+    "id": "ordnance-survey",
+    "name": "Ordnance Survey",
+    "url": "https://www.ordnancesurvey.co.uk/"
+  },
+  {
+    "id": "geoplace",
+    "name": "Geoplace",
+    "url": "https://www.geoplace.co.uk/"
+  },
+  {
+    "id": "graphql-foundation",
+    "name": "The GraphQL Foundation",
+    "url": "https://graphql.org/foundation/"
+  }
+]

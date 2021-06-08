@@ -4,6 +4,7 @@ use anyhow::Result;
 
 use crate::checksum::Digest;
 
+/// A trait to be implemented by cachable resources.
 pub trait Resource<Item: Digest> {
     /// Composes a single resource given its id.
     fn get(&mut self, id: &str) -> Result<Option<Item>>;

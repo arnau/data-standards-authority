@@ -22,6 +22,12 @@ CREATE TABLE IF NOT EXISTS licence (
   url      text NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS organisation (
+  id       text NOT NULL PRIMARY KEY,
+  checksum text NOT NULL,
+  name     text NOT NULL,
+  url      text NOT NULL
+);
 
 CREATE TABLE IF NOT EXISTS endorsement_state (
   standard_id text NOT NULL PRIMARY KEY,
@@ -46,11 +52,13 @@ CREATE TABLE IF NOT EXISTS standard (
   checksum      text NOT NULL,
   name          text NOT NULL,
   acronym       text,
-  topic         text NOT NULL,
+  topic_id      text NOT NULL,
   specification text NOT NULL,
-  licence       text,
-  maintainer    text NOT NULL,
+  licence_id    text,
+  maintainer_id text NOT NULL,
   content       text NOT NULL
 
-  /* FOREIGN KEY (licence) REFERENCES licence (id) */
+  -- FOREIGN KEY (topic_id) REFERENCES topic (id)
+  -- FOREIGN KEY (licence_id) REFERENCES licence (id)
+  -- FOREIGN KEY (maintainer_id) REFERENCES organisation (id)
 );

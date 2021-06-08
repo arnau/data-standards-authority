@@ -125,10 +125,10 @@ impl Resource<Standard> for Cache {
                 id: standard_record.id,
                 name: standard_record.name,
                 acronym: standard_record.acronym,
-                topic: standard_record.topic,
+                topic: standard_record.topic_id,
                 specification: standard_record.specification,
-                licence: standard_record.licence,
-                maintainer: standard_record.maintainer,
+                licence: standard_record.licence_id,
+                maintainer: standard_record.maintainer_id,
                 related,
                 endorsement_state,
             };
@@ -206,10 +206,10 @@ impl From<&Standard> for StandardRecord {
             checksum: standard.checksum().to_string(),
             name: standard.metadata.name.clone(),
             acronym: standard.metadata.acronym.clone(),
-            topic: standard.metadata.topic.clone(),
+            topic_id: standard.metadata.topic.clone(),
             specification: standard.metadata.specification.clone(),
-            licence: standard.metadata.licence.clone(),
-            maintainer: standard.metadata.maintainer.clone(),
+            licence_id: standard.metadata.licence.clone(),
+            maintainer_id: standard.metadata.maintainer.clone(),
             content: standard.content.clone(),
         }
     }

@@ -225,10 +225,10 @@ impl Cache {
                 checksum,
                 name,
                 acronym,
-                topic,
+                topic_id,
                 specification,
-                licence,
-                maintainer,
+                licence_id,
+                maintainer_id,
                 content
             FROM
                 standard
@@ -244,10 +244,10 @@ impl Cache {
                 checksum: row.get(1)?,
                 name: row.get(2)?,
                 acronym: row.get(3)?,
-                topic: row.get(4)?,
+                topic_id: row.get(4)?,
                 specification: row.get(5)?,
-                licence: row.get(6)?,
-                maintainer: row.get(7)?,
+                licence_id: row.get(6)?,
+                maintainer_id: row.get(7)?,
                 content: row.get(8)?,
             };
             return Ok(Some(result));
@@ -277,10 +277,10 @@ impl Cache {
             &record.checksum,
             &record.name,
             &record.acronym,
-            &record.topic,
+            &record.topic_id,
             &record.specification,
-            &record.licence,
-            &record.maintainer,
+            &record.licence_id,
+            &record.maintainer_id,
             &record.content,
         ];
         let mut stmt = tx.prepare(
@@ -290,10 +290,10 @@ impl Cache {
                 checksum,
                 name,
                 acronym,
-                topic,
+                topic_id,
                 specification,
-                licence,
-                maintainer,
+                licence_id,
+                maintainer_id,
                 content
             )
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);

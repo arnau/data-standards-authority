@@ -8,10 +8,10 @@ pub struct StandardRecord {
     pub(crate) checksum: String,
     pub(crate) name: String,
     pub(crate) acronym: Option<String>,
-    pub(crate) topic: String,
+    pub(crate) topic_id: String,
     pub(crate) specification: String,
-    pub(crate) licence: Option<String>,
-    pub(crate) maintainer: String,
+    pub(crate) licence_id: Option<String>,
+    pub(crate) maintainer_id: String,
     pub(crate) content: String,
 }
 
