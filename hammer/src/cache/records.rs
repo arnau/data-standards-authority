@@ -38,3 +38,11 @@ pub struct LicenceRecord {
     pub acronym: Option<String>,
     pub url: String,
 }
+
+#[derive(Debug, Clone)]
+pub struct OrganisationRecord {
+    pub id: String,
+    pub checksum: String,
+    pub name: String,
+    pub url: String,
+}

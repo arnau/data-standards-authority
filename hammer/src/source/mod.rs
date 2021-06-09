@@ -7,9 +7,11 @@ use regex::Regex;
 
 pub mod endorsement;
 pub mod licence;
+pub mod organisation;
 pub mod standard;
 
 pub use licence::Licence;
+pub use organisation::Organisation;
 pub use standard::Standard;
 
 // TODO: Consider promoting to Chrono

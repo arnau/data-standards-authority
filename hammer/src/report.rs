@@ -37,6 +37,7 @@ pub enum Entity {
     Cache,
     Standard,
     Licence,
+    Organisation,
     // Guidance,
     // Usecase,
     // Casestudy,
