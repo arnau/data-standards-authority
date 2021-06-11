@@ -59,7 +59,7 @@ impl Resource<Organisation> for Cache {
         let tx = self.conn.transaction()?;
         let mut result = None;
 
-        if let Some(record) = Cache::select_organisation(&tx, id)? {
+        if let Some(record) = OrganisationRecord::select(&tx, id)? {
             result = Some(Organisation {
                 id: record.id.clone(),
                 name: record.name.clone(),
@@ -80,13 +80,13 @@ impl Resource<Organisation> for Cache {
         let tx = self.conn.transaction()?;
         let checksum = item.checksum().to_string();
 
-        if let Some(cached) = Cache::select_organisation(&tx, &item.id)? {
+        if let Some(cached) = OrganisationRecord::select(&tx, &item.id)? {
             if cached.checksum != checksum {
-                Cache::delete_organisation(&tx, &item.id)?;
-                Cache::insert_organisation(&tx, &item.into())?;
+                OrganisationRecord::delete(&tx, &item.id)?;
+                OrganisationRecord::insert(&tx, &item.into())?;
             }
         } else {
-            Cache::insert_organisation(&tx, &item.into())?;
+            OrganisationRecord::insert(&tx, &item.into())?;
         }
 
         Cache::insert_trailmark(&tx, &checksum, "organisation", &self.timestamp)?;
@@ -108,7 +108,7 @@ impl Resource<Organisation> for Cache {
         let tx = self.conn.transaction()?;
 
         if item.is_some() {
-            Cache::delete_organisation(&tx, id)?;
+            OrganisationRecord::delete(&tx, id)?;
         }
 
         &self

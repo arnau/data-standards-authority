@@ -3,12 +3,11 @@ use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
 
+use super::LicenceId;
 use crate::cache::{Cache, LicenceRecord};
 use crate::checksum::{Checksum, Digest, Hasher};
 use crate::report;
 use crate::resource::Resource;
-
-type LicenceId = String;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Licence {
@@ -62,7 +61,7 @@ impl Resource<Licence> for Cache {
         let tx = self.conn.transaction()?;
         let mut result = None;
 
-        if let Some(licence_record) = Cache::select_licence(&tx, licence_id)? {
+        if let Some(licence_record) = LicenceRecord::select(&tx, licence_id)? {
             result = Some(Licence {
                 id: licence_record.id.clone(),
                 name: licence_record.name.clone(),
@@ -84,13 +83,13 @@ impl Resource<Licence> for Cache {
         let tx = self.conn.transaction()?;
         let checksum = licence.checksum().to_string();
 
-        if let Some(cached) = Cache::select_licence(&tx, &licence.id)? {
+        if let Some(cached) = LicenceRecord::select(&tx, &licence.id)? {
             if cached.checksum != checksum {
-                Cache::delete_licence(&tx, &licence.id)?;
-                Cache::insert_licence(&tx, &licence.into())?;
+                LicenceRecord::delete(&tx, &licence.id)?;
+                LicenceRecord::insert(&tx, &licence.into())?;
             }
         } else {
-            Cache::insert_licence(&tx, &licence.into())?;
+            LicenceRecord::insert(&tx, &licence.into())?;
         }
 
         Cache::insert_trailmark(&tx, &checksum, "licence", &self.timestamp)?;
@@ -112,7 +111,7 @@ impl Resource<Licence> for Cache {
         let tx = self.conn.transaction()?;
 
         if licence.is_some() {
-            Cache::delete_licence(&tx, licence_id)?;
+            LicenceRecord::delete(&tx, licence_id)?;
         }
 
         &self.report.log(

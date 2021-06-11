@@ -104,9 +104,9 @@ impl Resource<Standard> for Cache {
         let tx = self.conn.transaction()?;
         let mut result = None;
 
-        if let Some(standard_record) = Cache::select_standard(&tx, standard_id)? {
-            let related_records = Cache::select_related_standards(&tx, standard_id)?;
-            let endorsement_record = Cache::select_endorsement_state(&tx, standard_id)?
+        if let Some(standard_record) = StandardRecord::select(&tx, standard_id)? {
+            let related_records = RelatedStandardRecord::select(&tx, standard_id)?;
+            let endorsement_record = EndorsementStateRecord::select(&tx, standard_id)?
                 .expect("missing endorsement state. the cache is corrupted.");
 
             let related = related_records
@@ -154,7 +154,7 @@ impl Resource<Standard> for Cache {
         let tx = self.conn.transaction()?;
         let checksum = standard.checksum().to_string();
 
-        if let Some(cached_standard) = Cache::select_standard(&tx, standard.id())? {
+        if let Some(cached_standard) = StandardRecord::select(&tx, standard.id())? {
             if cached_standard.checksum != checksum {
                 update_standard(&tx, standard)?;
             }
@@ -181,7 +181,7 @@ impl Resource<Standard> for Cache {
         let tx = self.conn.transaction()?;
 
         if standard.is_some() {
-            Cache::delete_standard(&tx, standard_id)?;
+            StandardRecord::delete(&tx, standard_id)?;
         }
 
         &self.report.log(
@@ -227,10 +227,10 @@ impl From<&Standard> for EndorsementStateRecord {
 
 /// Helper to perform a strict create. Will fail if the standard exists.
 fn create_standard(tx: &Transaction, standard: &Standard) -> Result<()> {
-    Cache::insert_standard(&tx, &standard.into())?;
+    StandardRecord::insert(&tx, &standard.into())?;
 
     for related in &standard.metadata.related {
-        Cache::insert_related_standard(
+        RelatedStandardRecord::insert(
             &tx,
             &RelatedStandardRecord {
                 standard_id: standard.id().clone(),
@@ -239,14 +239,14 @@ fn create_standard(tx: &Transaction, standard: &Standard) -> Result<()> {
         )?;
     }
 
-    Cache::insert_endorsement_state(&tx, &standard.into())?;
+    EndorsementStateRecord::insert(&tx, &standard.into())?;
 
     Ok(())
 }
 
 /// Helper to perform replace an existing standard. This relies on the `ON DELETE CASCADE`.
 fn update_standard(tx: &Transaction, standard: &Standard) -> Result<()> {
-    Cache::delete_standard(&tx, &standard.id())?;
+    StandardRecord::delete(&tx, &standard.id())?;
     create_standard(&tx, standard)?;
 
     Ok(())
