@@ -4,14 +4,12 @@ use serde::{Deserialize, Serialize};
 use std::str::FromStr;
 
 use super::endorsement::EndorsementState;
-use super::{split_content, LicenceId, OrganisationId, TopicId, Url};
+use super::{split_content, LicenceId, OrganisationId, StandardId, TopicId, Url};
 use crate::cache::records::*;
 use crate::cache::{Cache, Transaction};
 use crate::checksum::{Checksum, Digest, Hasher};
 use crate::report;
 use crate::resource::Resource;
-
-pub type StandardId = String;
 
 #[derive(Debug, Clone)]
 pub struct Standard {
@@ -67,7 +65,7 @@ pub struct Metadata {
     /// The name of the standard.
     pub name: String,
     /// The well-known acronym of the standard.
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub acronym: Option<String>,
     /// The topic used to classify the standard.
     pub topic: TopicId,
@@ -76,7 +74,7 @@ pub struct Metadata {
     /// The URL to the technical specification for the standard.
     pub specification: Url,
     /// The licence the standard (or specification) is licensed under.
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub licence: Option<LicenceId>,
     /// The organisation maintaining the specification.
     pub maintainer: OrganisationId,

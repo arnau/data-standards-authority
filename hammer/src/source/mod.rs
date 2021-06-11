@@ -6,6 +6,7 @@ use lazy_static::lazy_static;
 use regex::Regex;
 
 pub mod endorsement;
+pub mod guidance;
 pub mod licence;
 pub mod organisation;
 pub mod standard;
@@ -18,6 +19,7 @@ pub use standard::Standard;
 pub type Date = String;
 
 // pub type SubjectId = String;
+pub type StandardId = String;
 pub type LicenceId = String;
 pub type OrganisationId = String;
 pub type TopicId = String;

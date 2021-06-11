@@ -38,9 +38,9 @@ pub enum Entity {
     Standard,
     Licence,
     Organisation,
-    // Guidance,
-    // Usecase,
-    // Casestudy,
+    Guidance,
+    Usecase,
+    Casestudy,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

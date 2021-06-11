@@ -1,4 +1,5 @@
 use blake3::{self, Hash};
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use std::fmt;
 
@@ -110,6 +111,13 @@ impl<T: Digest> Digest for Option<T> {
                 &v.digest(hasher);
             }
         }
+    }
+}
+
+impl Digest for DateTime<Utc> {
+    fn digest(&self, hasher: &mut Hasher) {
+        hasher.update(&Tag::Timestamp.to_bytes());
+        self.format("%Y-%m-%d").to_string().digest(hasher);
     }
 }
 

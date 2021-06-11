@@ -2,6 +2,9 @@
 //!
 //! They should strictly match [`../cache.sql`].
 
+mod guidance;
+pub use guidance::{GuidanceRecord, GuidanceStandardRecord};
+
 #[derive(Debug, Clone)]
 pub struct StandardRecord {
     pub(crate) id: String,

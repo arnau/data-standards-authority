@@ -1,4 +1,4 @@
-//! This module covers the standard card and collection from an input point of view.
+//! This module covers the licence from an input point of view.
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
@@ -14,7 +14,7 @@ type LicenceId = String;
 pub struct Licence {
     id: LicenceId,
     pub name: String,
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub acronym: Option<String>,
     pub url: String,
 }

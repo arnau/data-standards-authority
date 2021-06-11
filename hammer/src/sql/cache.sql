@@ -62,3 +62,26 @@ CREATE TABLE IF NOT EXISTS standard (
   -- FOREIGN KEY (licence_id) REFERENCES licence (id)
   -- FOREIGN KEY (maintainer_id) REFERENCES organisation (id)
 );
+
+CREATE TABLE IF NOT EXISTS guidance_standard (
+  guidance_id text NOT NULL,
+  standard_id text NOT NULL,
+
+  UNIQUE (guidance_id, standard_id),
+  FOREIGN KEY (guidance_id) REFERENCES guidance (id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS guidance (
+  id               text NOT NULL PRIMARY KEY,
+  checksum         text NOT NULL,
+  description      text,
+  maintainer_id    text NOT NULL,
+  status           text NOT NULL,
+  creation_date    date NOT NULL,
+  update_date      date NOT NULL,
+  publication_date date,
+  canonical_url    text,
+  content          text NOT NULL
+
+  -- FOREIGN KEY (maintainer_id) REFERENCES organisation (id)
+);

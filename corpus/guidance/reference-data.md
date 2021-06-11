@@ -14,7 +14,7 @@ reviewers:
   - Arnau Siches
   - Gareth Heyes
   - Gareth Watkins
-  - Emmanuel Silve
+  - Emmanuel Silva
 purpose: |
   This guidance helps create good practice for publishing reference data across government in a useful form.
   **It should contain:**
