@@ -18,5 +18,25 @@
     "id": "graphql-foundation",
     "name": "The GraphQL Foundation",
     "url": "https://graphql.org/foundation/"
+  },
+  {
+    "id": "threesixtygiving",
+    "name": "360Giving",
+    "url": "https://www.threesixtygiving.org/"
+  },
+  {
+    "id": "open-contracting-partnership",
+    "name": "Open Contracting Partnership",
+    "url": "https://www.open-contracting.org/"
+  },
+  {
+    "id": "ietf",
+    "name": "IETF",
+    "url": "https://www.ietf.org/"
+  },
+  {
+    "id": "w3c",
+    "name": "W3C",
+    "url": "https://www.w3.org/"
   }
 ]

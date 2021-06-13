@@ -1,4 +1,5 @@
 ---
+type: guidance
 identifier: when-to-use-a-graphql-api
 maintainer: data-standards-authority
 status: draft

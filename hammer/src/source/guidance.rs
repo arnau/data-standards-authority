@@ -213,6 +213,7 @@ mod tests {
     use std::str::FromStr;
 
     static GUIDANCE: &'static str = r#"---
+type: guidance
 identifier: when-to-use-a-graphql-api
 maintainer: data-standards-authority
 status: draft

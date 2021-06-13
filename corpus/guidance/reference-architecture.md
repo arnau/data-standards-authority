@@ -1,4 +1,5 @@
 ---
+type: guidance
 identifier: reference-architecture
 maintainer: data-standards-authority
 status: published
@@ -121,7 +122,7 @@ All data should use approved open data standards and[ include metadata to allow 
 
 You should aim for an approach to services and systems in your organisation based around data, and move towards an approach [based on standardised data].
 
-A "service" is the method by which users interact with the government, for example [Renew your driving licence]. It is a group of multiple, interoperable systems that ingests, stores, manipulates, and produces data. 
+A "service" is the method by which users interact with the government, for example [Renew your driving licence]. It is a group of multiple, interoperable systems that ingests, stores, manipulates, and produces data.
 
 A "system" is one of the components which makes up a service. For example, the database storing the information, the sign in system, or an analytics platform.
 

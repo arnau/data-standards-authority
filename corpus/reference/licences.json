@@ -15,5 +15,15 @@
     "id": "owfa-1-0",
     "name": "Open Web Foundation Agreement 1.0",
     "url": "http://www.openwebfoundation.org/legal/the-owf-1-0-agreements/owfa-1-0"
+  },
+  {
+    "id": "apache-2.0",
+    "name": "Apache License 2.0",
+    "url": "https://choosealicense.com/licenses/apache-2.0/"
+  },
+  {
+    "id": "cc-by-4.0",
+    "name": "Creative Commons Attribution 4.0 International License",
+    "url": "https://creativecommons.org/licenses/by/4.0/"
   }
 ]

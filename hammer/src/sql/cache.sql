@@ -85,3 +85,11 @@ CREATE TABLE IF NOT EXISTS guidance (
 
   -- FOREIGN KEY (maintainer_id) REFERENCES organisation (id)
 );
+
+CREATE TABLE IF NOT EXISTS guidance_section (
+  id          text    NOT NULL,
+  guidance_id text    NOT NULL,
+  ordinal     integer NOT NULL,
+
+  FOREIGN KEY (guidance_id) REFERENCES guidance (id) ON DELETE CASCADE
+);

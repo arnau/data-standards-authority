@@ -11,8 +11,7 @@ conforms_to: bs7666-2
 specification: https://www.geoplace.co.uk/addresses/uprn
 licence: ogl-3
 maintainer: ordnance-survey
-
-endorsement_process:
+endorsement_state:
   status: endorsed
   start_date: 2020-12-16
   review_date: 2020-12-16

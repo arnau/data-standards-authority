@@ -1,4 +1,5 @@
 ---
+type: guidance
 identifier: publish-reference-data
 description: Share your reference data for use in projects and services outside your organisation.
 maintainer: data-standards-authority
