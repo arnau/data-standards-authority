@@ -1,11 +1,11 @@
 ---
 type: standard
+identifier: threesixtygiving
 name: 360Giving Schema
 topic: grants
 subject:
   - payments
 maintainer: threesixtygiving
-name: 360Giving Schema
 specification: https://standard.threesixtygiving.org/
 licence: cc-by-4.0
 endorsement_state:

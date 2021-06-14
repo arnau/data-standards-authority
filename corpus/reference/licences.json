@@ -25,5 +25,10 @@
     "id": "cc-by-4.0",
     "name": "Creative Commons Attribution 4.0 International License",
     "url": "https://creativecommons.org/licenses/by/4.0/"
+  },
+  {
+    "id": "ietf-bcp-78",
+    "name": "BCP 78",
+    "url": "https://www.rfc-editor.org/info/bcp78"
   }
 ]
