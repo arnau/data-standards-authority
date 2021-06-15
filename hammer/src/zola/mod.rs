@@ -11,7 +11,7 @@ pub use endorsement::EndorsementState;
 pub use licence::Licence;
 pub use organisation::Organisation;
 pub use standard::Standard;
-pub use taxonomy::Topic;
+pub use taxonomy::TopicReference;
 
 type StandardId = String;
 type LicenceId = String;

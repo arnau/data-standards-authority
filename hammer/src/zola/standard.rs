@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::str::FromStr;
 
-use super::{EndorsementState, Licence, Organisation, StandardId, Topic, Url};
+use super::{EndorsementState, Licence, Organisation, StandardId, TopicReference, Url};
 use crate::cache::records::*;
 use crate::cache::Cache;
 use crate::checksum::{Checksum, Digest, Hasher};
@@ -97,13 +97,13 @@ pub struct MetadataExtra {
     /// The well-known acronym of the standard.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub acronym: Option<String>,
-    /// The topic used to classify the standard.
-    // TODO: Promote to Topic
-    pub topic: String,
-    // /// The list of subjects that refine the topic classification.
-    // subjects: Vec<SubjectId>,
     /// The URL to the technical specification for the standard.
     pub specification: Url,
+    /// The topic used to classify the standard.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub topic: Option<TopicReference>,
+    // /// The list of subjects that refine the topic classification.
+    // subjects: Vec<SubjectId>,
     /// The licence the standard (or specification) is licensed under.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub licence: Option<Licence>,
@@ -157,6 +157,11 @@ impl Resource<Standard> for Cache {
             };
             let maintainer = OrganisationRecord::select(&tx, &standard_record.maintainer_id)?
                 .expect("maintainer to exist");
+            let topic =
+                TopicRecord::select(&tx, &standard_record.topic_id)?.map(|record| TopicReference {
+                    id: record.id,
+                    name: record.name,
+                });
 
             let endorsement_state = EndorsementState {
                 status: endorsement_record.status.parse()?,
@@ -168,8 +173,8 @@ impl Resource<Standard> for Cache {
                 id: standard_record.id.clone(),
                 name: standard_record.name.clone(),
                 acronym: standard_record.acronym,
-                topic: standard_record.topic_id,
                 specification: standard_record.specification,
+                topic,
                 licence: licence.map(Into::into),
                 maintainer: maintainer.into(),
                 related,
@@ -275,8 +280,11 @@ template = "standard.html"
 [extra]
 identifier = "vapour"
 name = "Vapour"
-topic = "exchange"
 specification = "https://spec.vapour.org/"
+
+[extra.topic]
+identifier = "exchange"
+name = "Exchange"
 
 [extra.licence]
 id = "ogl"
@@ -298,17 +306,25 @@ start_date = "2021-06-01"
 review_date = "2021-06-01"
 +++
 This standard will give you no overhead."#;
-
+        let topic_raw = r#"---
+type: topic
+identifier: exchange
+name: Exchange
+theme: other
+ordinal: 1
+---"#;
         let mut cache = Cache::connect(":memory:")?;
         let vapour = source::Standard::from_str(vapour_raw)?;
         let steam = source::Standard::from_str(steam_raw)?;
         let licence = source::Licence::from_str(licence_raw)?;
         let org = source::Organisation::from_str(org_raw)?;
+        let topic = source::Topic::from_str(topic_raw)?;
 
         cache.add(&org)?;
         cache.add(&licence)?;
         cache.add(&steam)?;
         cache.add(&vapour)?;
+        cache.add(&topic)?;
 
         let actual: Standard = cache.get(&vapour.id())?.unwrap();
 
