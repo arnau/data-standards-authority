@@ -10,8 +10,11 @@ CREATE TABLE IF NOT EXISTS session_trail (
 
 CREATE TABLE IF NOT EXISTS topic (
   id          text NOT NULL PRIMARY KEY,
+  checksum    text NOT NULL,
   name        text NOT NULL,
-  description text
+  description text NOT NULL,
+  theme_id    text NOT NULL,
+  ordinal     integer NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS licence (

@@ -59,7 +59,6 @@ impl From<&Standard> for Checksum {
 pub struct Metadata {
     title: String,
     date: DateTime<Utc>,
-    // description: String,
     slug: String,
     template: String,
     extra: MetadataExtra,

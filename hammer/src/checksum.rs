@@ -83,6 +83,13 @@ impl Digest for str {
     }
 }
 
+impl Digest for u32 {
+    fn digest(&self, hasher: &mut Hasher) {
+        hasher.update(&Tag::Integer.to_bytes());
+        hasher.update(self.to_string().as_bytes());
+    }
+}
+
 impl Digest for [u8] {
     fn digest(&self, hasher: &mut Hasher) {
         hasher.update(&Tag::Raw.to_bytes());

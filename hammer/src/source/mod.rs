@@ -10,10 +10,12 @@ pub mod guidance;
 pub mod licence;
 pub mod organisation;
 pub mod standard;
+pub mod topic;
 
 pub use licence::Licence;
 pub use organisation::Organisation;
 pub use standard::Standard;
+pub use topic::Topic;
 
 // TODO: Consider promoting to Chrono
 pub type Date = String;
