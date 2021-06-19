@@ -9,11 +9,13 @@ pub mod endorsement;
 pub mod guidance;
 pub mod licence;
 pub mod organisation;
+pub mod section;
 pub mod standard;
 pub mod topic;
 
 pub use licence::Licence;
 pub use organisation::Organisation;
+pub use section::Section;
 pub use standard::Standard;
 pub use topic::Topic;
 

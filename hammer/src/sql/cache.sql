@@ -8,6 +8,15 @@ CREATE TABLE IF NOT EXISTS session_trail (
 );
 
 
+-- jpeg, png, ...
+CREATE TABLE IF NOT EXISTS asset (
+  id            text NOT NULL PRIMARY KEY,
+  checksum      text NOT NULL,
+  content_type  text NOT NULL,
+  content       blob NOT NULL
+);
+
+
 CREATE TABLE IF NOT EXISTS topic (
   id          text NOT NULL PRIMARY KEY,
   checksum    text NOT NULL,
@@ -30,6 +39,13 @@ CREATE TABLE IF NOT EXISTS organisation (
   checksum text NOT NULL,
   name     text NOT NULL,
   url      text NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS section (
+  id            text NOT NULL PRIMARY KEY,
+  checksum      text NOT NULL,
+  resource_type text NOT NULL,
+  content       text NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS endorsement_state (

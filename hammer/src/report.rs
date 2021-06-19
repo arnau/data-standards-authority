@@ -42,6 +42,7 @@ pub enum Entity {
     Usecase,
     Casestudy,
     Topic,
+    Section,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
