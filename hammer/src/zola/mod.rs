@@ -5,11 +5,14 @@
 mod endorsement;
 mod licence;
 mod organisation;
+mod section;
 mod standard;
 mod taxonomy;
+
 pub use endorsement::EndorsementState;
 pub use licence::Licence;
 pub use organisation::Organisation;
+pub use section::Section;
 pub use standard::Standard;
 pub use taxonomy::TopicReference;
 

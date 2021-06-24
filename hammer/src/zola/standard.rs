@@ -26,6 +26,10 @@ impl Standard {
     pub fn checksum(&self) -> Checksum {
         self.into()
     }
+
+    pub fn path(&self) -> String {
+        format!("standards/{}.md", self.id())
+    }
 }
 
 impl fmt::Display for Standard {

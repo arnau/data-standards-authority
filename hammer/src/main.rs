@@ -1,12 +1,13 @@
 use anyhow::Result;
-use hammer::resource::Resource;
-use hammer::source::{Licence, Standard};
-use hammer::Cache;
 use std::fs::read_dir;
 use std::fs::File;
 use std::io::prelude::*;
 use std::str::FromStr;
 use walkdir::{DirEntry, WalkDir};
+
+use hammer::resource::Resource;
+use hammer::source::{Licence, Standard};
+use hammer::Cache;
 
 fn is_hidden(entry: &DirEntry) -> bool {
     entry
