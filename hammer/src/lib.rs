@@ -1,5 +1,6 @@
 pub mod cache;
 pub mod checksum;
+pub mod cli;
 pub mod markdown;
 pub mod report;
 pub mod resource;

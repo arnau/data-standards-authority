@@ -137,12 +137,32 @@ main {
   padding: 0.6rem;
 }
 
-.phase-endorsed {
+.status-endorsed {
   background-color: #8D5;
   color: black;
   display: inline-block;
   padding: 0.2rem;
 }
+
+.table-list {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 2.4rem 0;
+}
+
+.table-list th {
+  text-align: left;
+  border-bottom: 1px solid lightgrey;
+  padding: 0.6rem;
+  font-weight: 700;
+}
+
+.table-list td {
+  text-align: left;
+  border-bottom: 1px solid lightgrey;
+  padding: 0.6rem;
+}
+
 
 
 footer {

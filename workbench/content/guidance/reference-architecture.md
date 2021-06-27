@@ -1,15 +1,22 @@
----
-type: guidance
-identifier: reference-architecture
-maintainer: data-standards-authority
-status: published
-creation_date: 2020-10-01
-update_date: 2021-05-14
-publication_date: 2021-05-14
-canonical_url: https://www.gov.uk/guidance/develop-your-data-and-apis-using-a-reference-architecture
----
-# Develop a data and API estate using a reference architecture
++++
+title = "Develop a data and API estate using a reference architecture"
+date = "2020-10-01T00:00:00Z"
+slug = "reference-architecture"
+template = "guidance.html"
 
+[extra]
+identifier = "reference-architecture"
+status = "published"
+creation_date = "2020-10-01"
+update_date = "2021-05-14"
+publication_date = "2021-05-14"
+canonical_url = "https://www.gov.uk/guidance/develop-your-data-and-apis-using-a-reference-architecture"
+
+[extra.maintainer]
+id = "data-standards-authority"
+name = "Data Standards Authority"
+url = "https://www.gov.uk/government/groups/data-standards-authority/"
++++
 This guidance is a reference architecture. It will help you build your IT infrastructure so it supports operational and analytical processes that focus on using data and APIs. It suggests best practices and a maturity model.
 
 Developing your government organisation’s technical estate can help you to:

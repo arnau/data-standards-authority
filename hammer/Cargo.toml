@@ -5,7 +5,7 @@ authors = ["Arnau Siches <arnau.siches@digital.cabinet-office.gov.uk>"]
 edition = "2018"
 
 [[bin]]
-name = "hammer"
+name = "workbench"
 path = "src/main.rs"
 
 [dependencies]
@@ -14,7 +14,9 @@ blake3 = "0.3"
 chrono = { version = "0.4", features = ["std", "serde"] }
 clap = "3.0.0-beta.2"
 csv = "1.1"
+env_logger = "0.8"
 lazy_static = "1.4"
+log = "0.4"
 pulldown-cmark = "0.8"
 regex = "1.5"
 rusqlite = { version = "0.25", features = ["bundled"] }

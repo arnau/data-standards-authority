@@ -21,8 +21,7 @@ pub struct Cache {
 }
 
 impl Cache {
-    pub fn connect(path: &str) -> Result<Cache> {
-        let strategy = Strategy::from_str(path)?;
+    pub fn connect_with_strategy(strategy: Strategy) -> Result<Cache> {
         let mut report = Report::new();
         let timestamp = Utc::now();
         let conn = match &strategy {
@@ -51,6 +50,10 @@ impl Cache {
             report,
         })
     }
+    pub fn connect(path: &str) -> Result<Cache> {
+        let strategy = Strategy::from_str(path)?;
+        Self::connect_with_strategy(strategy)
+    }
 
     pub fn disconnect(&self) -> Result<()> {
         if let Strategy::Disk(_) = self.strategy {
@@ -64,6 +67,12 @@ impl Cache {
 
     pub fn report(&self) -> &Report {
         &self.report
+    }
+
+    pub fn transaction(&mut self) -> Result<Transaction> {
+        let tx = self.conn.transaction()?;
+
+        Ok(tx)
     }
 
     /// Remove all stale records for the given session.

@@ -1,47 +1,22 @@
----
-type: guidance
-identifier: publish-reference-data
-description: Share your reference data for use in projects and services outside your organisation.
-maintainer: data-standards-authority
-status: published
-canonical_url: https://www.gov.uk/guidance/publish-reference-data-for-use-across-government
-creation_date: 2021-01-22
-update_date: 2021-02-01
-publication_date: 2021-03-11
-standards:
-  - uprn
-  - usrn
-authors:
-  - Peter Gothard
-  - Lalit Shah
-reviewers:
-  - Arnau Siches
-  - Gareth Heyes
-  - Gareth Watkins
-  - Emmanuel Silva
-purpose: |
-  This guidance helps create good practice for publishing reference data across government in a useful form.
-  **It should contain:**
++++
+title = "Publish reference data for use across government"
+date = "2021-01-22T00:00:00Z"
+slug = "publish-reference-data"
+template = "guidance.html"
 
-  - Information and resources to help readers
-    - publish reference data to follow best practice
-    - build a publishing, governance and support strategy
-target: Anyone in government looking to publish their organisation’s reference data for others to use
-user_needs: Best practice in publishing their own organisation’s reference data for the use of others
-route: |
-  When interested parties search GOV.UK they should get a top hit that leads them to the DSA reference data guidance collection, and a second hit to the Registers page.
+[extra]
+identifier = "publish-reference-data"
+status = "published"
+creation_date = "2021-01-22"
+update_date = "2021-02-01"
+publication_date = "2021-03-11"
+canonical_url = "https://www.gov.uk/guidance/publish-reference-data-for-use-across-government"
 
-  Those going directly to the Registers page should be provided with links to find the DSA guidance.
-problem_statements:
-  - This is an opportunity or the DSA to introduce guidance for publishing reference data in government, in order to encourage organisations to begin managing and publishng their own data real estates rather than relying on centralised platforms managed by others.
-tags:
-  - reference data
-  - master data
-  - registers
----
-# Publish reference data for use across government
-
-
+[extra.maintainer]
+id = "data-standards-authority"
+name = "Data Standards Authority"
+url = "https://www.gov.uk/government/groups/data-standards-authority/"
++++
 ## Who should use this guidance
 
 This guidance is for government employees who are publishing reference data for the use of others in government. It shares the best practice for creating a strategy to manage and support reference data for publishing.

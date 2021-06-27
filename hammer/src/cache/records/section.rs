@@ -10,6 +10,31 @@ pub struct SectionRecord {
 }
 
 impl SectionRecord {
+    pub(crate) fn select_all(tx: &Transaction) -> Result<Vec<SectionRecord>> {
+        let mut stmt = tx.prepare(
+            r#"
+            SELECT
+                *
+            FROM
+                section;
+        "#,
+        )?;
+        let mut rows = stmt.query(params![])?;
+        let mut result = Vec::new();
+
+        while let Some(row) = rows.next()? {
+            let record = SectionRecord {
+                id: row.get(0)?,
+                checksum: row.get(1)?,
+                resource_type: row.get(2)?,
+                content: row.get(3)?,
+            };
+            result.push(record);
+        }
+
+        Ok(result)
+    }
+
     pub(crate) fn select(tx: &Transaction, id: &str) -> Result<Option<SectionRecord>> {
         let mut stmt = tx.prepare(
             r#"

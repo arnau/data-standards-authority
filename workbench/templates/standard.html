@@ -18,49 +18,51 @@
     <td>{{ page.extra.name }} {% if 'acronym' in page.extra %}({{ page.extra.acronym }}){% endif %}</td>
   </tr>
   <tr scope="row">
-    <th>Publisher</th>
-    <td><a href="{{ page.extra.organisation.url }}">{{ page.extra.organisation.name }}</a></td>
+    <th>Maintainer</th>
+    <td><a href="{{ page.extra.maintainer.url }}">{{ page.extra.maintainer.name }}</a></td>
   </tr>
   <tr scope="row">
     <th>Specification</th>
     <td><a href="{{ page.extra.specification }}">{{ page.extra.specification }}</a></td>
   </tr>
+  {% if 'licence' in page.extra %}
   <tr scope="row">
-    <th>Phase</th>
-    <td><span class="phase-{{ page.extra.phase }}">{{ page.extra.phase }}</span></td>
+    <th>Licence</th>
+    <td><a href="{{ page.extra.licence.url }}">{{ page.extra.licence.name }}</a></td>
+  </tr>
+  {% endif %}
+</table>
+
+{% if 'endorsement_state' in page.extra %}
+{% set state = page.extra.endorsement_state %}
+<table class="card">
+  <caption>Endorsement state</caption>
+  <tr scope="row">
+    <th>Status</th>
+    <td><span class="status-{{ state.status }}">{{ state.status }}</span></td>
   </tr>
   <tr scope="row">
     <th>Start date</th>
-    <td>{{ page.extra.dateCreated }}</td>
-  </tr>
-</table>
-
-{% if 'challenge' in page.extra %}
-{% set challenge = page.extra.challenge %}
-<table class="card">
-  <caption>Open Standards Board Challenge</caption>
-  <tr scope="row">
-    <th>Creation date</th>
-    <td>{{ challenge.dateCreated }}</td>
-  </tr>
-  {% if 'datePublished' in challenge %}
-  <tr scope="row">
-    <th>Endorsment date</th>
-    <td>{{ challenge.datePublished }}</td>
+    <td>{{ state.start_date }}</td>
   </tr>
   <tr scope="row">
-    <th>Official publication</th>
-    <td><a href="{{ challenge.url }}">{{ challenge.title }}</a></td>
+    <th>Review date</th>
+    <td>{{ state.review_date }}</td>
+  </tr>
+  {% if 'publication_date' in state %}
+  <tr scope="row">
+    <th>Endorsement date</th>
+    <td>{{ challenge.publication_date }}</td>
   </tr>
   {% endif %}
 </table>
 {% endif %}
 
-{% if 'related' in page.extra %}
+{% if page.extra.related | length > 0 %}
   <h2>Related standards</h2>
   <ul>
   {% for item in page.extra.related %}
-  <li><a href="{{ item.url }}">{{ item.title }}</a></li>
+  <li><a href="../{{ item.id }}">{{ item.name }}</a></li>
   {% endfor%}
   </ul>
 {% endif %}

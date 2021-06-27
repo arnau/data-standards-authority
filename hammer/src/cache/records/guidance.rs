@@ -1,6 +1,6 @@
 use anyhow::Result;
 use rusqlite::types::{FromSql, FromSqlError, FromSqlResult, ToSql, ToSqlOutput, ValueRef};
-use rusqlite::{params, Transaction};
+use rusqlite::{params, Row, Transaction};
 use std::str::FromStr;
 
 use crate::{Status, StatusError};
@@ -19,7 +19,44 @@ pub struct GuidanceRecord {
     pub(crate) content: String,
 }
 
+fn into_record(row: &Row) -> Result<GuidanceRecord> {
+    let record = GuidanceRecord {
+        id: row.get(0)?,
+        checksum: row.get(1)?,
+        description: row.get(2)?,
+        maintainer_id: row.get(3)?,
+        status: row.get(4)?,
+        creation_date: row.get(5)?,
+        update_date: row.get(6)?,
+        publication_date: row.get(7)?,
+        canonical_url: row.get(8)?,
+        content: row.get(9)?,
+    };
+
+    Ok(record)
+}
+
 impl GuidanceRecord {
+    pub(crate) fn select_all(tx: &Transaction) -> Result<Vec<GuidanceRecord>> {
+        let mut stmt = tx.prepare(
+            r#"
+            SELECT
+                *
+            FROM
+                guidance
+        "#,
+        )?;
+        let mut rows = stmt.query(params![])?;
+        let mut result = Vec::new();
+
+        while let Some(row) = rows.next()? {
+            let record = into_record(&row)?;
+            result.push(record);
+        }
+
+        Ok(result)
+    }
+
     pub(crate) fn select(tx: &Transaction, id: &str) -> Result<Option<GuidanceRecord>> {
         let mut stmt = tx.prepare(
             r#"
@@ -34,18 +71,7 @@ impl GuidanceRecord {
         let mut rows = stmt.query(params![id])?;
 
         if let Some(row) = rows.next()? {
-            let result = GuidanceRecord {
-                id: row.get(0)?,
-                checksum: row.get(1)?,
-                description: row.get(2)?,
-                maintainer_id: row.get(3)?,
-                status: row.get(4)?,
-                creation_date: row.get(5)?,
-                update_date: row.get(6)?,
-                publication_date: row.get(7)?,
-                canonical_url: row.get(8)?,
-                content: row.get(9)?,
-            };
+            let result = into_record(&row)?;
             return Ok(Some(result));
         }
 

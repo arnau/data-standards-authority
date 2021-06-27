@@ -1,6 +1,7 @@
 //! This module covers the standard card from a Zola point of view.
 use anyhow::Result;
 use chrono::{DateTime, Utc};
+use rusqlite::Transaction;
 use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::str::FromStr;
@@ -28,7 +29,7 @@ impl Standard {
     }
 
     pub fn path(&self) -> String {
-        format!("standards/{}.md", self.id())
+        format!("{}.md", self.id())
     }
 }
 
@@ -51,9 +52,9 @@ impl Digest for Standard {
 }
 
 impl From<&Standard> for Checksum {
-    fn from(standard: &Standard) -> Checksum {
+    fn from(resource: &Standard) -> Checksum {
         let mut hasher = Hasher::new();
-        standard.digest(&mut hasher);
+        resource.digest(&mut hasher);
 
         hasher.finalize()
     }
@@ -108,14 +109,14 @@ pub struct MetadataExtra {
     pub topic: Option<TopicReference>,
     // /// The list of subjects that refine the topic classification.
     // subjects: Vec<SubjectId>,
+    /// The list of related standards.
+    #[serde(default)]
+    pub related: Vec<RelatedStandard>,
     /// The licence the standard (or specification) is licensed under.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub licence: Option<Licence>,
     /// The organisation maintaining the specification.
     pub maintainer: Organisation,
-    /// The list of related standards.
-    #[serde(default)]
-    pub related: Vec<RelatedStandard>,
     pub endorsement_state: EndorsementState,
 }
 
@@ -133,79 +134,17 @@ impl Digest for RelatedStandard {
 }
 
 impl Resource<Standard> for Cache {
-    fn get(&mut self, standard_id: &str) -> Result<Option<Standard>> {
+    fn get(&mut self, id: &str) -> Result<Option<Standard>> {
         let tx = self.conn.transaction()?;
         let mut result = None;
 
-        if let Some(standard_record) = StandardRecord::select(&tx, standard_id)? {
-            let related_records = RelatedStandardRecord::select(&tx, standard_id)?;
-            let endorsement_record = EndorsementStateRecord::select(&tx, standard_id)?
-                .expect("missing endorsement state. the cache is corrupted.");
-            let mut related: Vec<RelatedStandard> = Vec::new();
-
-            for related_record in related_records {
-                if let Some(std_record) =
-                    StandardRecord::select(&tx, &related_record.related_standard_id)?
-                {
-                    related.push(RelatedStandard {
-                        id: std_record.id,
-                        name: std_record.name,
-                    });
-                }
-            }
-
-            let licence = if let Some(licence_id) = standard_record.licence_id {
-                LicenceRecord::select(&tx, &licence_id)?
-            } else {
-                None
-            };
-            let maintainer = OrganisationRecord::select(&tx, &standard_record.maintainer_id)?
-                .expect("maintainer to exist");
-            let topic =
-                TopicRecord::select(&tx, &standard_record.topic_id)?.map(|record| TopicReference {
-                    id: record.id,
-                    name: record.name,
-                });
-
-            let endorsement_state = EndorsementState {
-                status: endorsement_record.status.parse()?,
-                start_date: endorsement_record.start_date,
-                review_date: endorsement_record.review_date,
-                end_date: endorsement_record.end_date,
-            };
-            let extra = MetadataExtra {
-                id: standard_record.id.clone(),
-                name: standard_record.name.clone(),
-                acronym: standard_record.acronym,
-                specification: standard_record.specification,
-                topic,
-                licence: licence.map(Into::into),
-                maintainer: maintainer.into(),
-                related,
-                endorsement_state: endorsement_state.clone(),
-            };
-            let date = FromStr::from_str(&format!("{}T00:00:00Z", &endorsement_state.start_date))?;
-            let metadata = Metadata {
-                title: standard_record.name,
-                date,
-                slug: format!("standards/{}", standard_record.id),
-                template: "standard.html".to_string(),
-                extra,
-            };
-            let standard = Standard {
-                metadata,
-                content: standard_record.content,
-            };
-
-            result = Some(standard);
+        if let Some(record) = StandardRecord::select(&tx, id)? {
+            result = Some(into_resource(&tx, record)?);
         }
 
-        &self.report.log(
-            report::Action::Get,
-            report::Entity::Standard,
-            standard_id,
-            "",
-        );
+        &self
+            .report
+            .log(report::Action::Get, report::Entity::Standard, id, "");
 
         tx.commit()?;
 
@@ -219,6 +158,84 @@ impl Resource<Standard> for Cache {
     fn drop(&mut self, _id: &str) -> Result<Option<Standard>> {
         unimplemented!()
     }
+}
+
+pub fn get_all(cache: &mut Cache) -> Result<Vec<Standard>> {
+    let tx = cache.transaction()?;
+    let records = StandardRecord::select_all(&tx)?;
+    let mut result = Vec::new();
+
+    for record in records {
+        let resource = into_resource(&tx, record)?;
+
+        result.push(resource);
+    }
+
+    tx.commit()?;
+
+    Ok(result)
+}
+
+fn into_resource(tx: &Transaction, record: StandardRecord) -> Result<Standard> {
+    let standard_id = &record.id;
+    let related_records = RelatedStandardRecord::select(tx, &standard_id)?;
+    let endorsement_record = EndorsementStateRecord::select(tx, &standard_id)?
+        .expect("missing endorsement state. the cache is corrupted.");
+    let mut related: Vec<RelatedStandard> = Vec::new();
+
+    for related_record in related_records {
+        if let Some(std_record) = StandardRecord::select(&tx, &related_record.related_standard_id)?
+        {
+            related.push(RelatedStandard {
+                id: std_record.id,
+                name: std_record.name,
+            });
+        }
+    }
+
+    let licence = if let Some(licence_id) = record.licence_id {
+        LicenceRecord::select(&tx, &licence_id)?
+    } else {
+        None
+    };
+    let maintainer =
+        OrganisationRecord::select(&tx, &record.maintainer_id)?.expect("maintainer to exist");
+    let topic = TopicRecord::select(&tx, &record.topic_id)?.map(|record| TopicReference {
+        id: record.id,
+        name: record.name,
+    });
+
+    let endorsement_state = EndorsementState {
+        status: endorsement_record.status.parse()?,
+        start_date: endorsement_record.start_date,
+        review_date: endorsement_record.review_date,
+        end_date: endorsement_record.end_date,
+    };
+    let extra = MetadataExtra {
+        id: record.id.clone(),
+        name: record.name.clone(),
+        acronym: record.acronym,
+        specification: record.specification,
+        topic,
+        licence: licence.map(Into::into),
+        maintainer: maintainer.into(),
+        related,
+        endorsement_state: endorsement_state.clone(),
+    };
+    let date = FromStr::from_str(&format!("{}T00:00:00Z", &endorsement_state.start_date))?;
+    let metadata = Metadata {
+        title: record.name,
+        date,
+        slug: record.id,
+        template: "standard.html".to_string(),
+        extra,
+    };
+    let standard = Standard {
+        metadata,
+        content: record.content,
+    };
+
+    Ok(standard)
 }
 
 #[cfg(test)]
@@ -278,7 +295,7 @@ This standard will give you warmth."#;
         let zola_page = r#"+++
 title = "Vapour"
 date = "2021-06-01T00:00:00Z"
-slug = "standards/vapour"
+slug = "vapour"
 template = "standard.html"
 
 [extra]
@@ -290,6 +307,10 @@ specification = "https://spec.vapour.org/"
 identifier = "exchange"
 name = "Exchange"
 
+[[extra.related]]
+id = "steam"
+name = "Steam"
+
 [extra.licence]
 id = "ogl"
 name = "Open Government Licence"
@@ -299,10 +320,6 @@ url = "https://ogl.gov.uk"
 id = "data-standards-authority"
 name = "Data Standards Authority"
 url = "https://dsa.gov.uk"
-
-[[extra.related]]
-id = "steam"
-name = "Steam"
 
 [extra.endorsement_state]
 status = "identified"

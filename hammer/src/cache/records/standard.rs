@@ -1,5 +1,5 @@
 use anyhow::Result;
-use rusqlite::{params, Transaction};
+use rusqlite::{params, Row, Transaction};
 
 #[derive(Debug, Clone)]
 pub struct StandardRecord {
@@ -14,7 +14,43 @@ pub struct StandardRecord {
     pub(crate) content: String,
 }
 
+fn into_record(row: &Row) -> Result<StandardRecord> {
+    let record = StandardRecord {
+        id: row.get(0)?,
+        checksum: row.get(1)?,
+        name: row.get(2)?,
+        acronym: row.get(3)?,
+        topic_id: row.get(4)?,
+        specification: row.get(5)?,
+        licence_id: row.get(6)?,
+        maintainer_id: row.get(7)?,
+        content: row.get(8)?,
+    };
+
+    Ok(record)
+}
+
 impl StandardRecord {
+    pub(crate) fn select_all(tx: &Transaction) -> Result<Vec<StandardRecord>> {
+        let mut stmt = tx.prepare(
+            r#"
+            SELECT
+                *
+            FROM
+                standard;
+        "#,
+        )?;
+        let mut rows = stmt.query(params![])?;
+        let mut result = Vec::new();
+
+        while let Some(row) = rows.next()? {
+            let record = into_record(&row)?;
+            result.push(record);
+        }
+
+        Ok(result)
+    }
+
     pub(crate) fn select(tx: &Transaction, standard_id: &str) -> Result<Option<StandardRecord>> {
         let mut stmt = tx.prepare(
             r#"
@@ -29,17 +65,7 @@ impl StandardRecord {
         let mut rows = stmt.query(params![standard_id])?;
 
         if let Some(row) = rows.next()? {
-            let result = StandardRecord {
-                id: row.get(0)?,
-                checksum: row.get(1)?,
-                name: row.get(2)?,
-                acronym: row.get(3)?,
-                topic_id: row.get(4)?,
-                specification: row.get(5)?,
-                licence_id: row.get(6)?,
-                maintainer_id: row.get(7)?,
-                content: row.get(8)?,
-            };
+            let result = into_record(&row)?;
             return Ok(Some(result));
         }
 

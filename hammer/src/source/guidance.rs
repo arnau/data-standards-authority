@@ -66,10 +66,15 @@ impl Resource<Guidance> for Cache {
         if let Some(cached) = GuidanceRecord::select(&tx, id)? {
             let related_records = GuidanceStandardRecord::select(&tx, id)?;
 
-            let related = related_records
+            let related_list = related_records
                 .iter()
                 .map(|record| record.standard_id.clone())
                 .collect::<Vec<_>>();
+            let related = if related_list.len() == 0 {
+                None
+            } else {
+                Some(related_list)
+            };
 
             let metadata = Metadata {
                 id: cached.id,
@@ -145,14 +150,16 @@ impl Resource<Guidance> for Cache {
 fn create(tx: &Transaction, item: &Guidance) -> Result<()> {
     GuidanceRecord::insert(&tx, &item.into())?;
 
-    for standard_id in &item.metadata.standards {
-        GuidanceStandardRecord::insert(
-            &tx,
-            &GuidanceStandardRecord {
-                guidance_id: item.id().clone(),
-                standard_id: standard_id.clone(),
-            },
-        )?;
+    if let Some(list) = &item.metadata.standards {
+        for standard_id in list {
+            GuidanceStandardRecord::insert(
+                &tx,
+                &GuidanceStandardRecord {
+                    guidance_id: item.id().clone(),
+                    standard_id: standard_id.clone(),
+                },
+            )?;
+        }
     }
 
     Ok(())
@@ -187,7 +194,8 @@ pub struct Metadata {
     update_date: Date,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     publication_date: Option<Date>,
-    standards: Vec<StandardId>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    standards: Option<Vec<StandardId>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     canonical_url: Option<Url>,
 }

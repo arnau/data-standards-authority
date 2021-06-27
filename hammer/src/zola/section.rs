@@ -1,15 +1,25 @@
-//! This module covers the section from a Zola point of view.
+//! This module covers the [Zola section] point of view.
+//!
+//! This is a reflection of the Source [`crate::source::section::Section`].
+//!
+//! [Zola section]: https://www.getzola.org/documentation/content/section/
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use std::fmt;
+use std::str::FromStr;
 
 use crate::cache::records::*;
 use crate::cache::Cache;
 use crate::checksum::{Checksum, Digest, Hasher};
 use crate::markdown;
 use crate::report;
-use crate::resource::Resource;
+use crate::resource::{Resource, ResourceType};
 
+/// Represents a [Zola section].
+///
+/// This is a reflection of the Source [`crate::source::section::Section`].
+///
+/// [Zola section]: https://www.getzola.org/documentation/content/section/
 #[derive(Debug, Clone)]
 pub struct Section {
     pub metadata: Metadata,
@@ -26,7 +36,11 @@ impl Section {
     }
 
     pub fn path(&self) -> String {
-        format!("{}/_index.md", self.id())
+        format!("{}/", self.id())
+    }
+
+    pub fn resource_type(&self) -> Result<ResourceType> {
+        ResourceType::from_str(&self.metadata.extra.resource_type)
     }
 }
 
@@ -85,6 +99,32 @@ impl Digest for MetadataExtra {
         self.id.digest(hasher);
         self.resource_type.digest(hasher);
     }
+}
+
+pub fn get_all(cache: &mut Cache) -> Result<Vec<Section>> {
+    let tx = cache.transaction()?;
+    let records = SectionRecord::select_all(&tx)?;
+    let mut result = Vec::new();
+
+    for record in records {
+        let extra = MetadataExtra {
+            id: record.id.clone(),
+            resource_type: record.resource_type.clone(),
+        };
+        let (title, content) = markdown::split_title(&record.content)?;
+
+        let metadata = Metadata {
+            title,
+            slug: format!("{}", record.id),
+            template: format!("{}-section.html", record.id),
+            extra,
+        };
+        let resource = Section { metadata, content };
+
+        result.push(resource);
+    }
+
+    Ok(result)
 }
 
 impl Resource<Section> for Cache {
