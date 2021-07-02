@@ -32,10 +32,18 @@
   {% if 'canonical_url' in page.extra %}
   <tr scope="row">
     <th>Official publication</th>
-    <td><a href="{{ page.extra.canonical_url }}">{{ page.extra.canonical_url }}</a></td>
+    <td class="official-publication"><a href="{{ page.extra.canonical_url }}">{{ page.extra.canonical_url }}</a></td>
   </tr>
   {% endif %}
 </table>
+
+{% if 'canonical_url' in page.extra %}
+<div class="note">
+  This guidance has an official version published in GOV.UK. The differences you might find in here are in draft for the
+  next version and are subject to change. Please help us improve it by providing feedback.
+</div>
+{% endif %}
+
 
 {{ page.content | safe }}
 

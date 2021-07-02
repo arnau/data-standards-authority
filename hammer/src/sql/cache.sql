@@ -17,6 +17,14 @@ CREATE TABLE IF NOT EXISTS asset (
 );
 
 
+CREATE TABLE IF NOT EXISTS theme (
+  id          text NOT NULL PRIMARY KEY,
+  checksum    text NOT NULL,
+  name        text NOT NULL,
+  description text NOT NULL,
+  ordinal     integer NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS topic (
   id          text NOT NULL PRIMARY KEY,
   checksum    text NOT NULL,
@@ -24,6 +32,8 @@ CREATE TABLE IF NOT EXISTS topic (
   description text NOT NULL,
   theme_id    text NOT NULL,
   ordinal     integer NOT NULL
+
+  -- FOREIGN KEY (theme_id) REFERENCES theme (id)
 );
 
 CREATE TABLE IF NOT EXISTS licence (

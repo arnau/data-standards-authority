@@ -4,9 +4,29 @@
 <h1 class="title">
   {{ section.title }}
 </h1>
-<ul>
+<table class="table-list">
+  <thead>
+    <th scope="col">Name</th>
+    <th scope="col">Status</th>
+    <th scope="col">Last update</th>
+    <th scope="col">Publication date</th>
+  </thead>
+  <tbody>
   {% for page in section.pages %}
-  <li><a href="{{ page.permalink | safe }}">{{ page.title }}</a></li>
+  <tr>
+    <td><a href="{{ page.permalink | safe }}">{{ page.title }}</a></td>
+    <td><span class="status-{{page.extra.status}}">{{ page.extra.status }}</span></td>
+    <td>{{ page.extra.update_date }}</td>
+    <td>
+      {% if 'publication_date' in page.extra %}
+      {{ page.extra.publication_date }}
+      {% else %}
+      n/a
+      {% endif%}
+    </td>
+  </tr>
   {% endfor %}
-</ul>
+  </tbody>
+</table>
+
 {% endblock content %}
