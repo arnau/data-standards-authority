@@ -1,5 +1,6 @@
 name: hammer-ci
 on:
+  workflow_dispatch:
   push:
     branches:
       - 'hammer-*'
@@ -28,6 +29,7 @@ jobs:
         override: true
     - name: Run CI
       uses: actions-rs/cargo@v1
+      working-directory: ./hammer
       with:
         command: build
         args: --release
