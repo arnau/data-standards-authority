@@ -5,31 +5,47 @@ on:
     tags:
       - 'v*'
 jobs:
-  publish:
-    name: Publish for ${{ matrix.os }}
-    runs-on: ${{ matrix.os }}
+  build:
+    name: ${{ matrix.job.os }} (${{ matrix.job.target }})
+    runs-on: ${{ matrix.job.os }}
     strategy:
+      fail-fast: false
       matrix:
-        include:
-          - os: ubuntu-latest
-            artifact_name: workbench
-            asset_name: workbench-linux-amd64
-          - os: windows-latest
-            artifact_name: workbench.exe
-            asset_name: workbench-windows-amd64
-          - os: macos-latest
-            artifact_name: workbench
-            asset_name: workbench-macos-amd64
-
+        job:
+          - { artifact_name: workbench,     os: ubuntu-latest,  target: x86_64-unknown-linux-gnu }
+          - { artifact_name: workbench,     os: ubuntu-latest,  target: x86_64-unknown-linux-musl, use-cross: true }
+          - { artifact_name: workbench,     os: macos-latest,   target: x86_64-apple-darwin }
+          - { artifact_name: workbench.exe, os: windows-latest, target: x86_64-pc-windows-gnu }
     steps:
-    - uses: actions/checkout@v2
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - name: Install prerequisites
+      shell: bash
+      run: |
+        case ${{ matrix.job.target }} in
+          x86_64-unknown-linux-musl) sudo apt-get -y update ; sudo apt-get -y install musl-tools ;;
+        esac
+
+    - name: Install Rust toolchain
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        target: ${{ matrix.job.target }}
+        override: true
+        profile: minimal
+
     - name: Build
-      working-directory: ./hammer
-      run: cargo build --release --locked
+      uses: actions-rs/cargo@v1
+      with:
+        # use-cross: ${{ matrix.job.use-cross }}
+        command: build
+        args: --release --target=${{ matrix.job.target }} --manifest-path hammer/Cargo.toml
+
     - name: Upload binaries to release
       uses: svenstaro/upload-release-action@v2
       with:
         repo_token: ${{ secrets.GITHUB_TOKEN }}
-        file: hammer/target/release/${{ matrix.artifact_name }}
-        asset_name: ${{ matrix.asset_name }}
+        file: hammer/target/${{ matrix.job.target }}/release/${{ matrix.job.artifact_name }}
+        asset_name: ${{ matrix.job.target }}_${{ matrix.job.artifact_name }}
         tag: ${{ github.ref }}

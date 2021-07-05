@@ -1,5 +1,5 @@
 HAMMER_VERSION ?= v0.1.0
-TARGET_ARCH ?= linux-amd64
+TARGET_ARCH ?= x86_64-unknown-linux-musl_workbench
 
 production:
 	make fetch-hammer
@@ -14,7 +14,7 @@ preview:
 .PHONY: preview
 
 fetch-hammer:
-	curl -L -o hammer https://github.com/arnau/data-standards-authority/releases/download/${HAMMER_VERSION}/workbench-${TARGET_ARCH}
+	curl -L -o hammer https://github.com/arnau/data-standards-authority/releases/download/${HAMMER_VERSION}/${ARTIFACT_NAME}
 	chmod +x hammer
 .PHONY: fetch-hammer
 
