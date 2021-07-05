@@ -17,6 +17,27 @@ html, body {
   --highlight-color: gold;
 }
 
+.skip-link:link,
+.skip-link:visited,
+.skip-link:hover,
+.govuk-skip-link:active,
+.govuk-skip-link:focus {
+  color: black;
+}
+
+.skip-link:link {
+  display: block;
+  padding: 1rem;
+  position: absolute;
+  top: -10rem;
+}
+
+.skip-link:focus {
+  outline: none;
+  background-color: #fd0;
+  position: static;
+}
+
 .brand {
   background-color: #111;
   color: white;
@@ -30,7 +51,12 @@ html, body {
   max-width: var(--max-width);
 }
 
-.brand div > span {
+.brand div > a {
+  color: white;
+  text-decoration: none;
+}
+
+.brand div > a span {
   background-color: var(--complementary-color);
   display: inline-block;
   padding: 0.2rem;
@@ -93,6 +119,10 @@ header > nav {
     background-color: var(--highlight-color);
     outline: none;
     border-bottom: 3px solid black;
+  }
+
+  li.active {
+    border-bottom: 2px solid black;
   }
 }
 
@@ -190,9 +220,47 @@ main {
   line-height: 1.2;
 }
 
+a.action {
+  display: inline-block;
+  background-color: green;
+  text-decoration: none;
+  color: white;
+  font-size: 1.2rem;
+  padding: 0.8rem;
+  margin: 0.8rem 0;
+  box-shadow: rgba(50, 50, 93, 0.25) 0px 2px 5px -1px, rgba(0, 0, 0, 0.3) 0px 1px 3px -1px;
+}
 
+a.action:hover, a.action:focus {
+  background-color: var(--highlight-color);
+  color: black;
+}
 
 footer {
   border-top: 1px solid #ededed;
   padding-top: 0.4rem;
+
+  nav {
+    display: grid;
+    grid-gap: 0.2rem;
+    grid-auto-flow: column;
+    grid-template-columns: repeat(4, 1fr);
+    grid-auto-columns: minmax(auto, 1fr);
+    padding: 1rem;
+
+    ul {
+      margin: 0;
+      padding: 0;
+    }
+  }
+
+  p {
+    margin: 0;
+    padding: 1rem 0;
+  }
+
+  svg {
+    display: block;
+    margin-bottom: 0.6rem;
+  }
 }

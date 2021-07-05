@@ -104,14 +104,12 @@ pub struct MetadataExtra {
     pub acronym: Option<String>,
     /// The URL to the technical specification for the standard.
     pub specification: Url,
-    /// The topic used to classify the standard.
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub topic: Option<TopicReference>,
-    // /// The list of subjects that refine the topic classification.
-    // subjects: Vec<SubjectId>,
     /// The list of related standards.
     #[serde(default)]
     pub related: Vec<RelatedStandard>,
+    /// The topic used to classify the standard.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub topic: Option<TopicReference>,
     /// The licence the standard (or specification) is licensed under.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub licence: Option<Licence>,
@@ -203,6 +201,7 @@ fn into_resource(tx: &Transaction, record: StandardRecord) -> Result<Standard> {
     let topic = TopicRecord::select(&tx, &record.topic_id)?.map(|record| TopicReference {
         id: record.id,
         name: record.name,
+        theme: record.theme_id,
     });
 
     let endorsement_state = EndorsementState {
@@ -303,13 +302,14 @@ identifier = "vapour"
 name = "Vapour"
 specification = "https://spec.vapour.org/"
 
-[extra.topic]
-identifier = "exchange"
-name = "Exchange"
-
 [[extra.related]]
 id = "steam"
 name = "Steam"
+
+[extra.topic]
+identifier = "exchange"
+name = "Exchange"
+theme = "other"
 
 [extra.licence]
 id = "ogl"

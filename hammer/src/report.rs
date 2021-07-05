@@ -35,15 +35,16 @@ pub enum Action {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum Entity {
     Cache,
-    Standard,
+    Casestudy,
+    Guidance,
     Licence,
     Organisation,
-    Guidance,
-    Usecase,
-    Casestudy,
-    Topic,
     Section,
+    Standard,
+    Theme,
+    Topic,
     Unknown,
+    Usecase,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

@@ -18,6 +18,7 @@ pub mod licence;
 pub mod organisation;
 pub mod section;
 pub mod standard;
+pub mod theme;
 pub mod topic;
 
 pub use guidance::Guidance;
@@ -25,6 +26,7 @@ pub use licence::Licence;
 pub use organisation::Organisation;
 pub use section::Section;
 pub use standard::Standard;
+pub use theme::Theme;
 pub use topic::Topic;
 
 use crate::cache::Cache;
@@ -38,6 +40,7 @@ pub type StandardId = String;
 pub type LicenceId = String;
 pub type OrganisationId = String;
 pub type TopicId = String;
+pub type ThemeId = String;
 pub type Url = String;
 
 fn split_content(blob: &str) -> Result<(&str, &str)> {
@@ -103,6 +106,14 @@ fn process_markdown_source(cache: &mut Cache, entry: &Path) -> Result<()> {
         }
         ResourceType::Standard => {
             let resource = Standard::from_str(&contents)?;
+            cache.add((&resource).into())?;
+        }
+        ResourceType::Theme => {
+            let resource = Theme::from_str(&contents)?;
+            cache.add((&resource).into())?;
+        }
+        ResourceType::Topic => {
+            let resource = Topic::from_str(&contents)?;
             cache.add((&resource).into())?;
         }
         _ => (),

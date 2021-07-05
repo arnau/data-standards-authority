@@ -7,6 +7,7 @@ mod licence;
 mod organisation;
 mod section;
 mod standard;
+mod theme;
 mod topic;
 
 pub use guidance::{GuidanceRecord, GuidanceStandardRecord};
@@ -14,4 +15,5 @@ pub use licence::LicenceRecord;
 pub use organisation::OrganisationRecord;
 pub use section::SectionRecord;
 pub use standard::{EndorsementStateRecord, RelatedStandardRecord, StandardRecord};
-pub use topic::TopicRecord;
+pub use theme::ThemeRecord;
+pub use topic::{TopicRecord, TopicStandardRecord};

@@ -1,0 +1,7 @@
+{% macro feedback_link(title) %}
+<p>
+  <a class="action" href="https://github.com/alphagov/data-standards-authority/issues/new?labels=feedback&title=Re:%20{{ title | urlencode }}&body=Feedback%20on%20%27DSA%27%20{{current_path}}">
+    Feedback on this document
+  </a>
+</p>
+{% endmacro feedback_link %}

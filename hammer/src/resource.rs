@@ -51,6 +51,10 @@ impl ResourceType {
             return ResourceType::Topic;
         }
 
+        if text.starts_with("---\ntype: theme\n") {
+            return ResourceType::Theme;
+        }
+
         if text.starts_with("---\ntype: guidance\n") {
             return ResourceType::Guidance;
         }

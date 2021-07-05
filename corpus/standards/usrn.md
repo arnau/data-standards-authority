@@ -3,7 +3,7 @@ type: standard
 identifier: usrn
 name: Unique Street Reference Number
 acronym: USRN
-topic: reference-data
+topic: geospatial
 subjects:
   - identification
   - geospatial

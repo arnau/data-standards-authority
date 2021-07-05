@@ -4,9 +4,13 @@
 <h1 class="title">
   {{ section.title }}
 </h1>
+
+{{ section.content | safe }}
+
 <ul>
-  {% for page in section.pages %}
-  <li><a href="{{ page.permalink | safe }}">{{ page.title }}</a></li>
+  {% for sub in section.subsections %}
+    {% set subsection = get_section(path=sub) %}
+    <li><a href="{{ subsection.permalink | safe }}">{{ subsection.title }}</a></li>
   {% endfor %}
 </ul>
 {% endblock content %}

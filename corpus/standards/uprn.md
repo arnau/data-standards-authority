@@ -3,7 +3,7 @@ type: standard
 identifier: uprn
 name: Unique Property Reference Number
 acronym: UPRN
-topic: reference-data
+topic: geospatial
 subjects:
   - identification
   - geospatial

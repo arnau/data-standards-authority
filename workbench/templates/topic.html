@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>
+  {{ page.title }}
+</h1>
+
+{{ page.content | safe }}
+
+
+{% if page.extra.standards | length > 0 %}
+  <h2>standards</h2>
+<table class="table-list">
+  <thead>
+    <th scope="col">Name</th>
+    <th scope="col">Status</th>
+    <th scope="col">Review date</th>
+  </thead>
+  <tbody>
+  {% for standard in page.extra.standards %}
+    <tr>
+      <td><a href="{{ standard.url | safe }}">{{ standard.name }}</a></td>
+      <td><span class="status-{{standard.status}}">{{ standard.status }}</span></td>
+      <td>{{ standard.review_date }}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p>No standards classified under this topic</p>
+{% endif %}
+
+{% endblock content %}

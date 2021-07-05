@@ -7,7 +7,7 @@
 <table class="table-list">
   <thead>
     <th scope="col">Name</th>
-    <th scope="col">Theme</th>
+    <th scope="col">Topic</th>
     <th scope="col">Status</th>
     <th scope="col">Review date</th>
   </thead>
@@ -15,7 +15,12 @@
   {% for page in section.pages %}
   <tr>
     <td><a href="{{ page.permalink | safe }}">{{ page.title }}</a></td>
-    <td>TODO</td>
+    <td>
+      {% if 'topic' in page.extra %}
+      {% set topic = page.extra.topic %}
+      <a href="/themes/{{ topic.theme }}/{{ topic.identifier }}">{{ topic.name }}</a>
+      {% endif %}
+    </td>
     <td><span class="status-{{page.extra.endorsement_state.status}}">{{ page.extra.endorsement_state.status }}</span></td>
     <td>{{ page.extra.endorsement_state.review_date }}</td>
   </tr>

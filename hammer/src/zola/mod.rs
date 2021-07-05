@@ -9,6 +9,8 @@ mod organisation;
 pub mod section;
 mod standard;
 mod taxonomy;
+mod theme;
+mod topic;
 
 pub use endorsement::EndorsementState;
 pub use guidance::Guidance;
@@ -17,6 +19,8 @@ pub use organisation::Organisation;
 pub use section::Section;
 pub use standard::Standard;
 pub use taxonomy::TopicReference;
+pub use theme::Theme;
+pub use topic::Topic;
 
 use anyhow::Result;
 use log::{info, warn};
@@ -30,6 +34,7 @@ type StandardId = String;
 type LicenceId = String;
 type GuidanceId = String;
 type TopicId = String;
+type ThemeId = String;
 type Url = String;
 type Date = String;
 
@@ -66,6 +71,23 @@ pub fn write(sink_dir: &Path, cache: &mut Cache) -> Result<()> {
                     fs::write(&resource_path, &resource.to_string())?;
                 }
             }
+            ResourceType::Theme => {
+                info!("Write theme set");
+                let resources = theme::get_all(cache)?;
+                for resource in resources {
+                    let resource_path = section_path.join(&resource.path());
+                    fs::create_dir(&resource_path)?;
+                    fs::write(&resource_path.join("_index.md"), &resource.to_string())?;
+
+                    info!("Write {} topics set", &resource.id());
+                    let subresources = topic::get_all(cache, &resource.id())?;
+                    for subresource in subresources {
+                        let subresource_path = resource_path.join(&subresource.path());
+                        fs::write(&subresource_path, &subresource.to_string())?;
+                    }
+                }
+            }
+
             typ => {
                 warn!("'{}' is an unimplemented zola resource", typ);
             }
