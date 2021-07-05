@@ -1,5 +1,6 @@
 name: hammer-release
 on:
+  workflow_dispatch:
   push:
     tags:
       - 'v*'
@@ -11,23 +12,24 @@ jobs:
       matrix:
         include:
           - os: ubuntu-latest
-            artifact_name: hammer
-            asset_name: hammer-linux-amd64
+            artifact_name: workbench
+            asset_name: workbench-linux-amd64
           - os: windows-latest
-            artifact_name: hammer.exe
-            asset_name: hammer-windows-amd64
+            artifact_name: workbench.exe
+            asset_name: workbench-windows-amd64
           - os: macos-latest
-            artifact_name: hammer
-            asset_name: hammer-macos-amd64
+            artifact_name: workbench
+            asset_name: workbench-macos-amd64
 
     steps:
     - uses: actions/checkout@v2
     - name: Build
+      working-directory: ./hammer
       run: cargo build --release --locked
     - name: Upload binaries to release
       uses: svenstaro/upload-release-action@v2
       with:
         repo_token: ${{ secrets.GITHUB_TOKEN }}
-        file: target/release/${{ matrix.artifact_name }}
+        file: hammer/target/release/${{ matrix.artifact_name }}
         asset_name: ${{ matrix.asset_name }}
         tag: ${{ github.ref }}
