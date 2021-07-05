@@ -1,5 +1,5 @@
 HAMMER_VERSION ?= v0.1.0
-TARGET_ARCH ?= x86_64-unknown-linux-musl_workbench
+ARTIFACT_NAME ?= x86_64-unknown-linux-musl_workbench
 
 production:
 	make fetch-hammer
